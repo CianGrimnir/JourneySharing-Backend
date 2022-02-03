@@ -2,10 +2,7 @@ from botocore.exceptions import ClientError
 from enum import Enum, unique
 from typing import List
 from services.response import ServicesApiResponse
-#from services import (
-#    default_region,
-#    AWS_ACCESS_KEY_ID,
-#    AWS_SECRET_ACCESS_KEY, )
+from services import const
 import boto3
 
 
@@ -56,11 +53,8 @@ class Service:
         def __repr__(self):
             return str(self.__dict__)
 
-    #def __init__(self, service_name: str = None, region: str = default_region, aws_service_key: str = AWS_ACCESS_KEY_ID,
-    #             aws_secret_key: str = AWS_SECRET_ACCESS_KEY):
-    def __init__(self, service_name: str = None, region: str = "us-east-1", aws_service_key: str = "AWS_ACCESS_KEY_ID",
-                 aws_secret_key: str = "AWS_SECRET_ACCESS_KEY"):
-
+    def __init__(self, service_name: str = None, region: str = const.default_region, aws_service_key: str = const.AWS_ACCESS_KEY_ID,
+                 aws_secret_key: str = const.AWS_SECRET_ACCESS_KEY):
         """
         Initializes the Service.
 

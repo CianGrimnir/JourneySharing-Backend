@@ -5,7 +5,7 @@ from .service import Service
 from services.response import ServicesApiResponse
 from typing import Dict
 from boto3.dynamodb.conditions import Key
-import services
+from services import const
 
 
 class DynamoDbService(Service):
@@ -13,10 +13,8 @@ class DynamoDbService(Service):
     This class provides higher-level integration with DynamoDB to facilitate common operations.
     """
 
-#    def __init__(self, service_name: str = 'dynamodb', region: str = services.default_region, aws_service_key: str = services.AWS_ACCESS_KEY_ID,
-#                 aws_secret_key: str = services.AWS_SECRET_ACCESS_KEY):
-    def __init__(self, service_name: str = 'dynamodb', region: str = "default_region", aws_service_key: str = "AWS_ACCESS_KEY_ID",
-                 aws_secret_key: str = "AWS_SECRET_ACCESS_KEY"):
+    def __init__(self, service_name: str = 'dynamodb', region: str = const.default_region, aws_service_key: str = const.AWS_ACCESS_KEY_ID,
+                 aws_secret_key: str = const.AWS_SECRET_ACCESS_KEY):
         """
         Initializes the Service.
 
