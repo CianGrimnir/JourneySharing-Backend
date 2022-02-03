@@ -2,7 +2,10 @@ from botocore.exceptions import ClientError
 from enum import Enum, unique
 from typing import List
 from services.response import ServicesApiResponse
-import services
+#from services import (
+#    default_region,
+#    AWS_ACCESS_KEY_ID,
+#    AWS_SECRET_ACCESS_KEY, )
 import boto3
 
 
@@ -53,8 +56,11 @@ class Service:
         def __repr__(self):
             return str(self.__dict__)
 
-    def __init__(self, service_name: str = None, region: str = services.default_region, aws_service_key: str = services.AWS_ACCESS_KEY_ID,
-                 aws_secret_key: str = services.AWS_SECRET_ACCESS_KEY):
+    #def __init__(self, service_name: str = None, region: str = default_region, aws_service_key: str = AWS_ACCESS_KEY_ID,
+    #             aws_secret_key: str = AWS_SECRET_ACCESS_KEY):
+    def __init__(self, service_name: str = None, region: str = "us-east-1", aws_service_key: str = "AWS_ACCESS_KEY_ID",
+                 aws_secret_key: str = "AWS_SECRET_ACCESS_KEY"):
+
         """
         Initializes the Service.
 
@@ -65,9 +71,9 @@ class Service:
         :param aws_secret_key: credentials to authenticate the AWS user.
         manager.
         """
-        self.region = region if region is not None else services.default_region
-        self.aws_service_key = aws_service_key if aws_service_key is not None else services.AWS_ACCESS_KEY_ID
-        self.aws_secret_key = aws_secret_key if aws_secret_key is not None else services.AWS_SECRET_ACCESS_KEY
+        self.region = region if region is not None else "default_region"
+        self.aws_service_key = aws_service_key if aws_service_key is not None else "AWS_ACCESS_KEY_ID"
+        self.aws_secret_key = aws_secret_key if aws_secret_key is not None else "AWS_SECRET_ACCESS_KEY"
         self.service_client = None if service_name is None else \
             boto3.client(**{'service_name': service_name, 'region_name': region, 'aws_access_key_id ': aws_service_key, 'aws_secret_access_key': aws_secret_key})
         self.service_resource = None if service_name is None else \
