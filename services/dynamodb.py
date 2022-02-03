@@ -1,6 +1,5 @@
 from botocore.exceptions import ClientError
-import boto3
-from typing import Dict
+import services
 from .service import Service
 from services.response import ServicesApiResponse
 from typing import Dict
