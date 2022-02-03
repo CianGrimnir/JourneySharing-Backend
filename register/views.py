@@ -1,10 +1,12 @@
-from django.shortcuts import render
+import random
+import string
 import json
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from services.dynamodb import DynamoDbService
 import services
+from services.service import Service
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_201_CREATED)
@@ -41,9 +43,20 @@ def user_register(request):
             services.logger.debug(f'password mismatch')
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
-        # Add logic to push data to dynamodb with return response - HTTP_201_CREATED
+        request_data['user_id'] = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(15))
+        response = dynamodbService.put_item_in_table('user_profile', request_data)
+        if response.errors is not None and response.return_code != Service.Response.OK:
+            response_body = {'status code': HTTP_400_BAD_REQUEST,
+                             'body': f'issue with AWS API call - {response.errors} {response.return_code}',
+                             }
+            return Response(response_body, status=HTTP_400_BAD_REQUEST)
+        response_body = {'status code': HTTP_201_CREATED,
+                         'body': f'successfully created user - {request_data["email"]}'
+                         }
+        return Response(response_body, status=HTTP_201_CREATED)
 
 
+# TODO: Add validator methods to verify the compliances for email and password
 def compare_dict(required_field, request_data):
     for field in required_field:
         if field not in request_data:
