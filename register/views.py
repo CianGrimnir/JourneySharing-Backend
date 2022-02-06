@@ -56,7 +56,7 @@ def user_register(request):
         return Response(response_body, status=HTTP_201_CREATED)
 
 
-# TODO: Add validator methods to verify the compliances for email and password
+# TODO: Add validator methods to verify the compliance's for email and password
 def compare_dict(required_field, request_data):
     for field in required_field:
         if field not in request_data:

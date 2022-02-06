@@ -8,6 +8,10 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_200_OK,
     HTTP_401_UNAUTHORIZED)
+import logging
+from services import const
+
+services.logger.setLevel(logging.DEBUG)
 
 
 # Create your views here.
@@ -15,9 +19,9 @@ from rest_framework.status import (
 @api_view(["POST"])
 def user_login(request):
     if request.method == 'POST':
-        user_name = request.data.user
-        auth_key = request.data.password
-        dynamodbService = DynamoDbService('dynamodb', services.default_region, services.AWS_ACCESS_KEY_ID, services.AWS_SECRET_ACCESS_KEY)
+        user_name = request.data.get("user")
+        auth_key = request.data.get("password")
+        dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         search_key = {'Username': user_name, 'Password': auth_key}
         get_items = dynamodbService.get_item_from_table('UserCreds', search_key)
         if get_items.errors is not None:

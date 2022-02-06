@@ -69,9 +69,9 @@ class Service:
         self.aws_service_key = aws_service_key if aws_service_key is not None else "AWS_ACCESS_KEY_ID"
         self.aws_secret_key = aws_secret_key if aws_secret_key is not None else "AWS_SECRET_ACCESS_KEY"
         self.service_client = None if service_name is None else \
-            boto3.client(**{'service_name': service_name, 'region_name': region, 'aws_access_key_id ': aws_service_key, 'aws_secret_access_key': aws_secret_key})
+            boto3.client(**{'service_name': service_name, 'region_name': region, 'aws_access_key_id': aws_service_key, 'aws_secret_access_key': aws_secret_key})
         self.service_resource = None if service_name is None else \
-            boto3.resource(**{'service_name': service_name, 'region_name': region, 'aws_access_key_id ': aws_service_key, 'aws_secret_access_key': aws_secret_key})
+            boto3.resource(**{'service_name': service_name, 'region_name': region, 'aws_access_key_id': aws_service_key, 'aws_secret_access_key': aws_secret_key})
 
     @staticmethod
     def build_ok_response(return_code: int = Response.OK.return_code, reason: str = Response.OK.reason, errors: List[Exception] = None,
