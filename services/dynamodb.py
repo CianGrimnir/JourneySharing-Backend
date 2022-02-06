@@ -96,15 +96,18 @@ class DynamoDbService(Service):
         tables - Returns a Dict in key value pair for given search_key value.
         """
         ddb_table = self.service_resource.Table(table_name)
+        search_item = None
         if not self.is_ready():
             response = Service.build_unavailable_response(**{'tables': None, 'item': None})
         else:
             try:
                 if table_name is None:
-                    item_from_table = None
+                    search_item = None
                 else:
                     item_from_table = ddb_table.get_item(Key=search_key)
-                response = Service.build_ok_response(**{'item': item_from_table})
+                    if 'Item' in item_from_table:
+                        search_item = item_from_table['Item']
+                response = Service.build_ok_response(**{'item': search_item})
             except ClientError as e:
                 response = Service.build_error_response(e)
         return response

@@ -19,29 +19,38 @@ services.logger.setLevel(logging.DEBUG)
 @api_view(["POST"])
 def user_login(request):
     if request.method == 'POST':
-        user_name = request.data.get("user")
+        services.logger.debug(request.__dict__)
+        email_address = request.data.get("email_address")
         auth_key = request.data.get("password")
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
-        search_key = {'Username': user_name, 'Password': auth_key}
-        get_items = dynamodbService.get_item_from_table('UserCreds', search_key)
+        search_key = {'email': email_address}
+        get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
+        services.logger.debug(f"output from dynamodb - {get_items}")
         if get_items.errors is not None:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
-                             'body': f'user - {user_name} bad request, error - {get_items.errors}',
+                             'body': f'user - {email_address} bad request, error - {get_items.errors}',
                              }
             services.logger.debug(get_items.reason)
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
         elif get_items.item is None:
             response_body = {'status code': HTTP_401_UNAUTHORIZED,
-                             'body': 'user - ' + str(user_name) + ' not found',
+                             'body': 'user - ' + str(email_address) + ' not found',
                              }
-            services.logger.debug(f'user_name {user_name} does not exist in db')
+            services.logger.debug(f'user_name {email_address} does not exist in db')
             return Response(response_body, status=HTTP_401_UNAUTHORIZED)
 
-        services.logger.info(f'{user_name} user authenticated')
-        response_body = {'status code': HTTP_200_OK,
-                         'body': f'user - {user_name} authenticated successfully.',
-                         }
-        return Response(response_body, status=HTTP_200_OK)
+        if get_items.item['password'] == auth_key:
+            services.logger.info(f'{email_address} user authenticated')
+            response_body = {'status code': HTTP_200_OK,
+                             'body': f'user - {email_address} authenticated successfully.',
+                             }
+            return Response(response_body, status=HTTP_200_OK)
+        else:
+            response_body = {'status code': HTTP_401_UNAUTHORIZED,
+                             'body': 'user - ' + str(email_address) + ' incorrect password',
+                             }
+            services.logger.debug(f'user_name {email_address} incorrect password')
+            return Response(response_body, status=HTTP_401_UNAUTHORIZED)
     else:
         response_body = {'status code': HTTP_400_BAD_REQUEST,
                          'body': f'BAD REQUEST - expected POST, got {request.method}',
