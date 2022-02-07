@@ -11,7 +11,7 @@ from rest_framework.status import (
 import logging
 from services import const
 
-services.logger.setLevel(logging.INFO)
+services.logger.setLevel(logging.DEBUG)
 
 
 # Create your views here.
@@ -24,7 +24,7 @@ def user_login(request):
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         search_key = {'email': email_address}
         get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
-        services.logger.debug(f"output from dynamodb - {get_items}")
+        services.logger.info(f"output from dynamodb - {get_items}")
         if get_items.errors is not None:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'user - {email_address} bad request, error - {get_items.errors}',
