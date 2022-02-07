@@ -1,6 +1,5 @@
 import random
 import string
-import json
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -11,8 +10,9 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_201_CREATED)
 import logging
-services.logger.setLevel(logging.INFO)
 from services import const
+
+services.logger.setLevel(logging.DEBUG)
 
 
 @csrf_exempt

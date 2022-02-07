@@ -11,7 +11,7 @@ from rest_framework.status import (
 import logging
 from services import const
 
-services.logger.setLevel(logging.INFO)
+services.logger.setLevel(logging.DEBUG)
 
 
 # Create your views here.
@@ -19,6 +19,7 @@ services.logger.setLevel(logging.INFO)
 @api_view(["POST"])
 def user_login(request):
     if request.method == 'POST':
+        services.logger.debug(f'request body - {request.data}')
         email_address = request.data.get("email_address")
         auth_key = request.data.get("password")
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
