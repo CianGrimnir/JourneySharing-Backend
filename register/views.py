@@ -11,8 +11,9 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_201_CREATED)
 import logging
-services.logger.setLevel(logging.DEBUG)
+services.logger.setLevel(logging.INFO)
 from services import const
+
 
 @csrf_exempt
 @api_view(["POST"])
@@ -28,9 +29,10 @@ def user_register(request):
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f' bad request, error - {get_items.errors}',
                              }
-            services.logger.debug(get_items.reason)
+            services.logger.debug(f"reason - {get_items.reason}")
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
         if not compare_dict(REQUIRED_FIELDS, request_data):
+            services.logger.debug(f"reason - required field missing.")
             return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
         if get_items.item is not None:
             email = request_data['email']
