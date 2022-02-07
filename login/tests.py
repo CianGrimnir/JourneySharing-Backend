@@ -9,9 +9,6 @@ from unittest.mock import patch
 from services.service import Service
 
 
-# TODO: try to mock the aws api response.
-# TODO: OR mock a dynamodbService method for covering BAD_REQUEST
-
 class UserLoginTest(TestCase):
     proper_login_body = {'email_address': 'asd@dsa.com', 'password': 'asddsa'}
     wrong_password_login_body = {'email_address': 'asd@dsa.com', 'password': 'asddsaa'}

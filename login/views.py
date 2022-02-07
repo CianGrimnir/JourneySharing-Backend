@@ -11,7 +11,7 @@ from rest_framework.status import (
 import logging
 from services import const
 
-services.logger.setLevel(logging.DEBUG)
+services.logger.setLevel(logging.INFO)
 
 
 # Create your views here.

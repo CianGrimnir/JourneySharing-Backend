@@ -22,14 +22,14 @@ def user_register(request):
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         REQUIRED_FIELDS = ['first_name', 'last_name', 'email', 'gender', 'age', 'country', 'phone_number', 'password', 'confirm_password']
         request_data = request.data.dict()
-        services.logger.debug(f"request body - {request_data}")
+        services.logger.info(f"request body - {request_data}")
         search_key = {'email': request_data['email'].lower()}
         get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
         if get_items.errors is not None:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f' bad request, error - {get_items.errors}',
                              }
-            services.logger.debug(f"reason - {get_items.reason}")
+            services.logger.debug(f"reason error - {get_items.__dict__}")
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
         if not compare_dict(REQUIRED_FIELDS, request_data):
             services.logger.debug(f"reason - required field missing.")
@@ -50,6 +50,7 @@ def user_register(request):
         _ = request_data.pop('confirm_password')
         request_data['user_id'] = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(15))
         response = dynamodbService.put_item_in_table('user_profiles', request_data)
+        services.logger.debug(f"put item - {response}")
         if response.errors is not None and response.return_code is not Service.Response.OK:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'issue with AWS API call - {response.errors} {response.return_code}',
@@ -58,6 +59,7 @@ def user_register(request):
         response_body = {'status code': HTTP_201_CREATED,
                          'body': f'successfully created user - {request_data["email"]}'
                          }
+        services.logger.debug(f"user created {request_data['email']}")
         return Response(response_body, status=HTTP_201_CREATED)
 
 
