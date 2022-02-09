@@ -21,8 +21,14 @@ def user_register(request):
     if request.method == "POST":
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         REQUIRED_FIELDS = ['first_name', 'last_name', 'email', 'gender', 'age', 'country', 'phone_number', 'password', 'confirm_password']
-        request_data = request.data.dict()
+        if isinstance(request.data, dict):
+            request_data = request.data
+        else:
+            request_data = request.data.dict()
         services.logger.info(f"request body - {request_data}")
+        if not compare_dict(REQUIRED_FIELDS, request_data):
+            services.logger.debug(f"reason - required field missing.")
+            return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
         search_key = {'email': request_data['email'].lower()}
         get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
         if get_items.errors is not None:
@@ -31,9 +37,7 @@ def user_register(request):
                              }
             services.logger.debug(f"reason error - {get_items.__dict__}")
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
-        if not compare_dict(REQUIRED_FIELDS, request_data):
-            services.logger.debug(f"reason - required field missing.")
-            return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
+
         if get_items.item is not None:
             email = request_data['email']
             response_body = {'status code': HTTP_400_BAD_REQUEST,
