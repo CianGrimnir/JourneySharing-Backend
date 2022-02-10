@@ -1,5 +1,6 @@
 import random
 import string
+import django.http.request
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -21,10 +22,10 @@ def user_register(request):
     if request.method == "POST":
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         REQUIRED_FIELDS = ['first_name', 'last_name', 'email', 'gender', 'age', 'country', 'phone_number', 'password', 'confirm_password']
-        if isinstance(request.data, dict):
-            request_data = request.data
-        else:
+        if isinstance(request.data, django.http.request.QueryDict):
             request_data = request.data.dict()
+        else:
+            request_data = request.data
         services.logger.info(f"request body - {request_data}")
         if not compare_dict(REQUIRED_FIELDS, request_data):
             services.logger.debug(f"reason - required field missing.")
