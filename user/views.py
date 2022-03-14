@@ -1,8 +1,9 @@
 from django.views.decorators.csrf import csrf_exempt
-from django.core import serializers
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from services.dynamodb import DynamoDbService
+from services.redis import Redis
 import services
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
@@ -15,12 +16,25 @@ services.logger.setLevel(logging.DEBUG)
 
 # Create your views here.
 @csrf_exempt
-@api_view(["GET"])
+@api_view(["POST"])
 def get_user_profile(request):
-    if request.method == 'GET':            # check with get as well
+    if request.method == 'POST':            # check with get as well
         services.logger.debug(f'request body - {request.data}')
+        redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         # TODO: add mechanism to verify and secure this profile sharing communication.
+        request_token = request.data.get("token")
         email_address = request.data.get("email_address")
+        auth_flag, reason = True, ""
+        if not request_token:
+            auth_flag, reason = False, "Missing"
+        elif not redis_client.get_values(request_token) or redis_client.get_values(request_token).decode("utf-8") != email_address:
+            auth_flag, reason = False, "Unauthorized"
+        if not auth_flag:
+            response_body = {'status code': HTTP_400_BAD_REQUEST,
+                             'body': f'user - {email_address} {reason} request token.',
+                             }
+            services.logger.info(f"username - {email_address} {reason} request token.")
+            return Response(response_body, status=HTTP_400_BAD_REQUEST)
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         search_key = {'email': email_address}
         get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
