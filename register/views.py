@@ -1,5 +1,3 @@
-import random
-import string
 import django.http.request
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
@@ -12,7 +10,7 @@ from rest_framework.status import (
     HTTP_201_CREATED)
 import logging
 from services import const
-
+import services.utils as utils
 services.logger.setLevel(logging.DEBUG)
 
 
@@ -53,7 +51,8 @@ def user_register(request):
             services.logger.debug(f'password mismatch')
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
         _ = request_data.pop('confirm_password')
-        request_data['user_id'] = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(15))
+        # request_data['user_id'] = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(15))
+        request_data['user_id'] = utils.generate_userid()
         response = dynamodbService.put_item_in_table('user_profiles', request_data)
         services.logger.debug(f"put item - {response}")
         if response.errors is not None and response.return_code is not Service.Response.OK:

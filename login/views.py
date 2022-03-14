@@ -1,8 +1,9 @@
 from django.views.decorators.csrf import csrf_exempt
-from django.core import serializers
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from services.dynamodb import DynamoDbService
+from services.redis import Redis
 import services
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
@@ -10,7 +11,7 @@ from rest_framework.status import (
     HTTP_401_UNAUTHORIZED)
 import logging
 from services import const
-
+import services.utils as utils
 services.logger.setLevel(logging.DEBUG)
 
 
@@ -19,6 +20,7 @@ services.logger.setLevel(logging.DEBUG)
 @api_view(["POST"])
 def user_login(request):
     if request.method == 'POST':
+        redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         services.logger.debug(f'request body - {request.data}')
         email_address = request.data.get("email_address")
         auth_key = request.data.get("password")
@@ -41,9 +43,12 @@ def user_login(request):
 
         if get_items.item['password'] == auth_key:
             services.logger.info(f'{email_address} user authenticated')
+            token = utils.get_token()
             response_body = {'status code': HTTP_200_OK,
+                             'token': token,
                              'body': f'user - {email_address} authenticated successfully.',
                              }
+            redis_client.set_values(token, get_items.item['email'])
             return Response(response_body, status=HTTP_200_OK)
         else:
             response_body = {'status code': HTTP_401_UNAUTHORIZED,

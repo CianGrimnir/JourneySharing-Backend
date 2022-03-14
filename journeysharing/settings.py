@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-dwn2p%@!)#ueya9@z280fv0#4v4%5^s1mj5$v09!zvw-m=1qin
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -35,7 +35,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-#    'django_nose',
     'corsheaders',
     'login',
     'register',
@@ -112,6 +111,9 @@ USE_I18N = True
 
 USE_TZ = True
 
+REDIS_HOST = 'localhost'
+
+REDIS_PORT = 6379
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
@@ -123,20 +125,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ['*']
 
 CORS_ORIGIN_ALLOW_ALL = True
 
 
-'''
-ALLOWED_HOSTS=['http://localhost:5000']
-
-CORS_ORIGIN_ALLOW_ALL = False
-
-CORS_ORIGIN_WHITELIST = (
-       'http://localhost:5000',
-)
-'''
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
