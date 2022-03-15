@@ -52,3 +52,5 @@ class UserLoginTest(TestCase):
         request = factory.post('/login/', self.wrong_login_body)
         response = user_login(request)
         self.assertEqual(response.status_code, HTTP_401_UNAUTHORIZED)
+
+
