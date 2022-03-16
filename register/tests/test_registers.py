@@ -7,9 +7,11 @@ from rest_framework.status import (
 from unittest.mock import patch
 from services.service import Service
 from decimal import Decimal
+import services
+import logging
 
+services.logger.setLevel(logging.ERROR)
 
-# Create your tests here.
 
 class UserRegisterTest(TestCase):
     proper_register_body = {'first_name': 'daw1', 'last_name': 'daw1', 'email': f'dsa1@daw.com', 'gender': 'male', 'age': '2222', 'country': 'ireland',
