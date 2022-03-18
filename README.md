@@ -31,3 +31,17 @@ export DJANGO_SETTINGS_MODULE="journeysharing.settings"
 # run test cases
 coverage run --source=. -m pytest -v . && coverage report -m
 ```
+
+## (OPTIONAL) Steps for enabling https
+```
+install mkcert following below link - 
+https://github.com/FiloSottile/mkcert/
+
+mkdir cert && cd cert
+mkcert -install
+mkcert -cert-file cert.pem -key-file key.pem localhost 127.0.0.1
+cd ../
+
+# run backend service in ssl mode
+python3 .\manage.py runsslserver --certificate .\cert\cert.pem --key .\cert\key.pem
+```
