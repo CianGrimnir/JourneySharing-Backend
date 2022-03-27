@@ -14,7 +14,7 @@ class Redis:
         :param hostname: hostname of the redis Server
         :param port: port number of the redis Server
         """
-        self.redis_client = redis.Redis(host=hostname, port=port)
+        self.redis_client = redis.Redis(host=hostname, port=port, charset="utf-8", decode_responses=True)
 
     def set_values(self, key_name: str, values: str):
         """
@@ -40,6 +40,14 @@ class Redis:
         :param score: score value used for sorting the set.
         """
         self.redis_client.zadd(key, {json.dumps(journey_detail): score})
+
+    def remove_journey(self, key: str):
+        """
+        Remove a journey with key as journey_id
+        :param key: the key that will be used to extract the value.
+        :param values: the value to be removed.
+        """
+        self.redis_client.delete(key)    
 
     def get_current_journey(self, key: str, start: int = 0, end: int = -1) -> list:
         """

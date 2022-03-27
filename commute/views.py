@@ -14,13 +14,47 @@ from rest_framework.status import (
 import logging
 import django.core.exceptions
 from services import const
+import json 
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import BallTree
+
 services.logger.setLevel(logging.DEBUG)
 import services.utils as utils
 
-def match_journey_requests(destination, mode):
+def match_journey_requests(journey_id):
     #search all req jouney 
-    journey_id = 0
-    return journey_id
+    redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    all_journeys = redis_client.get_current_journey("current_journey")
+    matched_journeys = []
+    current_journeys = []
+    requested_journey = {}
+    
+    for journey in all_journeys:
+        curr_journey = json.loads(journey)
+        current_journeys.append(curr_journey)
+        if curr_journey['journeyID'] == journey_id:
+            requested_journey['journeyID'] = curr_journey['journeyID']
+            requested_journey['src_lat'] = curr_journey['src_lat']    
+            requested_journey['src_long'] = curr_journey['src_long']
+            requested_journey['des_lat'] = curr_journey['des_lat']
+            requested_journey['des_long'] = curr_journey['des_long']    
+        
+    bt = pd.DataFrame(current_journeys)
+    bt.drop('userID', inplace=True, axis=1)
+    bt.drop('preferred_mode', inplace=True, axis=1)
+    bt.drop('radius', inplace=True, axis=1)
+    bt.drop('time', inplace=True, axis=1)
+    tree_list = BallTree(np.deg2rad(bt[['src_lat', 'src_long']].values), metric='haversine')
+    distances, indices = tree_list.query(np.deg2rad(np.c_[requested_journey['src_lat'], requested_journey['src_long']]), k = 3)
+    
+    for idx in indices.tolist():
+        for i in idx:
+            print(current_journeys[i])
+            matched_journeys.append(current_journeys[i])
+
+    redis_client.remove_journey(journey_id)
+    return matched_journeys
 
 # Create your views here.
 #user_id,slat, slong, dlat, dlong, preferred_mode, radius, time
@@ -32,7 +66,7 @@ def new_journey_user_request(request):
         if request.data.get("user_id") is None:
             services.logger.error('No data received from client')
             response_body = {'status code': HTTP_400_BAD_REQUEST,
-                             'body': f'user - {email_address} bad request, error - {get_items.errors}',
+                             'body': f'user - bad request',
                              }
             return Response(response_body, status=HTTP_400_BAD_REQUEST)                  
         else:
@@ -47,15 +81,6 @@ def new_journey_user_request(request):
             radius = request.data.get("radius")
             time = request.data.get("time")
 
-            #user_id = "adfadf"
-            #slat = 1.1
-            #slong = 1.2
-            #dlat = 2.3
-            #dlong = 3.3
-            #preferred_mode = "asd"
-            #radius = 555
-            #time = 23434
-
             journey_id = utils.generate_uniqid()
             services.logger.debug(f'Creating new journey request with data: {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
 
@@ -69,9 +94,10 @@ def new_journey_user_request(request):
                                     'preferred_mode': preferred_mode,
                                     'radius': radius,
                                     'time': time}
-                                                      
+            journey_data = json.dumps(journey_request_details).encode('utf-8')
+            redis_client.set_values(journey_id, journey_data)                                          
             redis_client.add_journey(const.REDIS_JOURNEY_KEY, journey_request_details, time)
-            #match_journey_requests(journey_request_details)
+            match_journey_requests(journey_id)
             response_body = {'status code': HTTP_200_OK} 
             return Response(response_body, status=HTTP_200_OK)
     else:   
