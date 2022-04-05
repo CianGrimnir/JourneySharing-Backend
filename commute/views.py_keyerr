@@ -1,4 +1,3 @@
-import re
 from django.views.decorators.csrf import csrf_exempt
 from statistics import mode
 from django.shortcuts import render
@@ -26,43 +25,59 @@ import services.utils as utils
 def match_journey_requests(journey_id):
     #search all req jouney 
     redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-    all_journeys = redis_client.get_all_journeys(const.REDIS_JOURNEY_KEY)
+    all_journeys = redis_client.get_current_journey("current_journey")
+    #print(type(all_journeys))
+    #services.logger.info('Journeys logged currently:',all_journeys)
     src_matched_journeys = []
     des_matched_journeys = []
     current_journeys = []
-    requested_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id))
+    requested_journey = {}
     
     for journey in all_journeys:
-        if (journey == journey_id):
-            continue
-        
-        curr_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey))                   
-        current_journeys.append(curr_journey)
-        print("Adding journey: ", curr_journey)
- 
+        curr_journey = json.loads(journey)
+        #print(curr_journey)
+        if curr_journey['journeyID'] == journey_id:
+            requested_journey['journeyID'] = curr_journey['journeyID']
+            requested_journey['src_lat'] = curr_journey['src_lat']    
+            requested_journey['src_long'] = curr_journey['src_long']
+            requested_journey['des_lat'] = curr_journey['des_lat']
+            requested_journey['des_long'] = curr_journey['des_long'] 
+            requested_journey['radius'] = curr_journey['radius']
+        else:
+            current_journeys.append(curr_journey)
+
+        #redis_client.remove_journey(curr_journey["journeyID"])    
+
+    #return
+    
     bt = pd.DataFrame(current_journeys)
     src_tree_list = BallTree(np.deg2rad(bt[['src_lat', 'src_long']].values), metric='haversine')
-    src_indices = src_tree_list.query_radius(np.deg2rad(np.c_[requested_journey['src_lat'], requested_journey['src_long']]), 
-                                                                r=requested_journey['radius'])
+    print("THIS")
+    #print(np.deg2rad(np.c_[requested_journey['src_lat'], requested_journey['src_long']]))
+    src_distances, src_indices = src_tree_list.query(np.deg2rad(np.c_[requested_journey['src_lat'], requested_journey['src_long']]), k = len(current_journeys))
+    #src_distances, src_indices = src_tree_list.query_radius(np.deg2rad(np.c_[requested_journey['src_lat'], requested_journey['src_long']]), requested_journey['radius'])
 
     for idx in src_indices.tolist():
         for i in idx:
+            print(current_journeys[i])
             src_matched_journeys.append(current_journeys[i])
 
+    print("source matched journeys")
+    print(src_matched_journeys)
+    print(len(src_matched_journeys))
     bt = pd.DataFrame(src_matched_journeys)
     des_tree_list = BallTree(np.deg2rad(bt[['des_lat', 'des_long']].values), metric='haversine')
-    des_indices = des_tree_list.query_radius(np.deg2rad(np.c_[requested_journey['des_lat'], requested_journey['des_long']]), 
-                                                                r = requested_journey['radius'])
+    des_distances, des_indices = des_tree_list.query(np.deg2rad(np.c_[requested_journey['des_lat'], requested_journey['des_long']]), k = len(src_matched_journeys))
+    #des_distances, des_indices = des_tree_list.query_radius(np.deg2rad(np.c_[requested_journey['des_lat'], requested_journey['des_long']]), requested_journey['radius'])
+    
     for idx in des_indices.tolist():
         for i in idx:
             des_matched_journeys.append(src_matched_journeys[i])
 
+    #print("get values:",redis_client.get_values(journey_id))
+    #redis_client.remove_journey(journey_id)
     print("source and destination matched journeys:", len(des_matched_journeys))
     print(des_matched_journeys)
-    ##########################################################
-    ###### JOIN EXISTING JOURNEY #############################
-    ##########################################################
-    join_existing_journey(requested_journey["journeyID"], curr_journey["journeyID"])
     return des_matched_journeys
 
 # Create your views here.
@@ -77,10 +92,8 @@ def new_journey_user_request(request):
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'user - bad request',
                              }
-
             redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-        
-            user_id = utils.generate_uniqid()
+            user_id = "398lpoi"
             slat = 5.8
             slong = 4.8
             dlat = 3.93
@@ -88,13 +101,7 @@ def new_journey_user_request(request):
             preferred_mode = "asd"
             radius = 555
             time = 23434 
-            
-
             journey_id = utils.generate_uniqid()
-            services.logger.debug(f'Creating new journey request with data: {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
-            drop_points = {}
-            destination = [dlat, dlong]
-            drop_points[user_id] = destination
             journey_request_details = { 'journeyID': journey_id,
                                     'userID': user_id,
                                     'src_lat': slat,
@@ -103,14 +110,13 @@ def new_journey_user_request(request):
                                     'des_long':dlong,
                                     'preferred_mode': preferred_mode,
                                     'radius': radius,
-                                    'time': time,
-                                    'drop_points': drop_points}
+                                    'time': time}
+            services.logger.debug(f'Creating new journey request with data: {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
             journey_data = json.dumps(journey_request_details).encode('utf-8')
-            redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_id, journey_request_details)
+            #redis_client.set_values(journey_id, journey_data)
+            #redis_client.add_journey(const.REDIS_JOURNEY_KEY, journey_request_details, time)
             match_journey_requests(journey_id)
-            response_body = {'status code': HTTP_200_OK} 
-            return Response(response_body, status=HTTP_200_OK)                 
-            
+            return Response(response_body, status=HTTP_400_BAD_REQUEST)                  
         else:
             redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         
@@ -123,12 +129,17 @@ def new_journey_user_request(request):
             radius = request.data.get("radius")
             time = request.data.get("time")
 
+            #user_id = "adfadf"
+            #slat = 1.1
+            #slong = 1.2
+            #dlat = 2.3
+            #dlong = 3.3
+            #preferred_mode = "asd"
+            #radius = 555
+            #time = 23434
+
             journey_id = utils.generate_uniqid()
             services.logger.debug(f'Creating new journey request with data: {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
-
-            drop_points = {}
-            destination = [dlat, dlong]
-            drop_points["user_id"].append(destination)
 
             #search_key = {'userID': user_id}
             journey_request_details = { 'journeyID': journey_id,
@@ -139,14 +150,11 @@ def new_journey_user_request(request):
                                     'des_long':dlong,
                                     'preferred_mode': preferred_mode,
                                     'radius': radius,
-                                    'time': time,
-                                    'drop_points': drop_points}
+                                    'time': time}
             journey_data = json.dumps(journey_request_details).encode('utf-8')
-            redis_client.set_values(journey_id, journey_data)       
-            print("VALUES SET:")
-            print(journey_data)                                   
-            #redis_client.add_journey(const.REDIS_JOURNEY_KEY, journey_request_details, time)
-            #match_journey_requests(journey_id)
+            redis_client.set_values(journey_id, journey_data)                                          
+            redis_client.add_journey(const.REDIS_JOURNEY_KEY, journey_request_details, time)
+            #match_journey_requests(journey_request_details)
             response_body = {'status code': HTTP_200_OK} 
             return Response(response_body, status=HTTP_200_OK)
     else:   
@@ -155,23 +163,15 @@ def new_journey_user_request(request):
                          }
         return Response(response_body, status=HTTP_400_BAD_REQUEST) 
  
-def start_journey(journey_id):
+def start_journey(groupID):
     pass
 
 def notify_user(message):
     pass
 
-def join_existing_journey(journey_id_self, journey_id_to_join):
-    redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-    curr_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id_self))  
-    join_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id_to_join)) 
-    drop_points = []
-    drop_points.append(join_journey["drop_points"])
-    drop_points.append(curr_journey["drop_points"])
-    join_journey["drop_points"] = drop_points   
-    redis_client.delete_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id_self)
-          
-        
+def join_existing_journey(journey_id):
+    pass
+
 def calc_start_pt():
     pass
 
