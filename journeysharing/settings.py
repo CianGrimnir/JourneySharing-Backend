@@ -11,9 +11,16 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import configparser
+import django.core.management.commands.runserver as runserver
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+config = configparser.ConfigParser()
+config.read('settings.ini')
+web_port = config['settings']['Django_Port']
+runserver.Command.default_port = web_port
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -35,6 +42,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'health_check',  # required
+    'health_check.db',  # stock Django health checkers
+    'health_check.cache',
+    'health_check.storage',
+    'health_check.contrib.migrations',
+    'health_check.contrib.psutil',  # disk and memory utilization; requires psutil
+    'health_check.contrib.redis',  # requires Redis broker
     'corsheaders',
     'login',
     'register',
@@ -115,6 +129,8 @@ REDIS_HOST = 'localhost'
 
 REDIS_PORT = 6379
 
+REDIS_URL = "redis://localhost:6379"
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
@@ -125,9 +141,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 CORS_ORIGIN_ALLOW_ALL = True
-
 
 LOGGING = {
     'version': 1,
@@ -143,3 +157,7 @@ LOGGING = {
     },
 }
 
+HEALTH_CHECK = {
+    'DISK_USAGE_MAX': 80,  # percent
+    'MEMORY_MIN': 200,    # in MB
+}

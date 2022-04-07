@@ -15,10 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from journeysharing.app import MyAppConfig
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', include('login.urls')),
     path('register/', include('register.urls')),
-    path('user/', include('user.urls'))
+    path('user/', include('user.urls')),
+    path('health/', include('heartbeat.urls')),
+    path('status/', include('health_check.urls')),
 ]
+
+setup = MyAppConfig()
+setup.ready()
