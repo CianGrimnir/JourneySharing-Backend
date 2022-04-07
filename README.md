@@ -3,7 +3,7 @@
 
 ## Run below command to setup the server - 
 ```
-pip3.9 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Start the server locally
@@ -14,7 +14,13 @@ docker-compose up -d
 ```
 * Start backend service
 ```
-python3.9 manage.py runserver
+python manage.py runserver
+```
+
+* To change the default port number, update the value of `Django_Port` present in the `settings.ini` file
+```
+[settings]
+Django_Port=8091
 ```
 
 ## Execute test cases for the backend service
