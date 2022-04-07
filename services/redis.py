@@ -14,7 +14,7 @@ class Redis:
         :param hostname: hostname of the redis Server
         :param port: port number of the redis Server
         """
-        self.redis_client = redis.Redis(host=hostname, port=port, charset="utf-8", decode_responses=True)
+        self.redis_client = redis.Redis(host=hostname, port=port)
 
     def add_new_journey(self, key: str, journey_id: str, journey_detail: dict):
         """
