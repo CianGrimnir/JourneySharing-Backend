@@ -52,4 +52,20 @@ class Redis:
         """
         return self.redis_client.hdel(key, journey_id)
 
+    def set_values(self, key_name: str, values: str):
+        """
+        set values to the redis Instances
+        :param key_name: key to hold the value string, If key already holds a value, it is overwritten.
+        :param values: the value to be stored.
+        """
+        self.redis_client.set(key_name, values)
+
+    def get_values(self, key: str) -> bytes:
+        """
+        get the value of the key.
+        :param key: the key that will be used to extract the value.
+        :return: the value.
+        """
+        return self.redis_client.get(key)    
+
 
