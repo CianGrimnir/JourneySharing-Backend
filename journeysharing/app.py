@@ -13,7 +13,7 @@ class MyAppConfig:
 
     def ready(self):
         resp = True
-        url = "http://localhost:2002/register?port="
+        url = "http://localhost:8002/register?port="
         cmd = runserver.Command()
         self.current_port = cmd.default_port
         print("starting the application", self.current_port)
