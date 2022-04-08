@@ -22,6 +22,7 @@ urlpatterns = [
     path('login/', include('login.urls')),
     path('register/', include('register.urls')),
     path('user/', include('user.urls')),
+    path('commute/', include('commute.urls')),
     path('health/', include('heartbeat.urls')),
     path('status/', include('health_check.urls')),
 ]
