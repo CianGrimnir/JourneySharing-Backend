@@ -8,6 +8,7 @@ omit =
     */*sgi.py
 
 [report]
+show_missing = True
 omit =
     */urls.py
     */admin.py

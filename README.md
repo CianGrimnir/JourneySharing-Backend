@@ -35,5 +35,9 @@ $env:DJANGO_SETTINGS_MODULE="journeysharing.settings"
 export DJANGO_SETTINGS_MODULE="journeysharing.settings"
 
 # run test cases
+# BASH
 coverage run --source=. -m pytest -v . && coverage report -m
+
+# Powershell
+coverage run --source=. -m pytest -v . ; coverage report -m
 ```
