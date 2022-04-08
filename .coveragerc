@@ -1,8 +1,20 @@
 [run]
 branch = True
 omit =
-    *\urls.py
-    *\admin.py
-    .\setup.py
-    .\manage.py
-    *\*sgi.py
+    */urls.py
+    */admin.py
+    ./manage.py
+    ./setup.py
+    */*sgi.py
+
+[report]
+omit =
+    */urls.py
+    */admin.py
+    ./manage.py
+    ./setup.py
+    */*sgi.py
+
+[html]
+title = Journey Sharing Python Test Coverage Report
+directory = reports/cover
