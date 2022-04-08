@@ -128,9 +128,7 @@ class Service:
 
         :return: The CloudServicesApiResponse built from client_error.
         """
-        return ServicesApiResponse(return_code=client_error.response['ResponseMetadata']['HTTPStatusCode'],
-                                   reason=client_error.response['Error']['Code'],
-                                   errors=[client_error],
+        return ServicesApiResponse(return_code=client_error.response['Error']['Code'], errors=[client_error],
                                    **kwargs)
 
     def is_ready(self) -> bool:

@@ -1,0 +1,8 @@
+[run]
+branch = True
+omit =
+    *\urls.py
+    *\admin.py
+    .\setup.py
+    .\manage.py
+    *\*sgi.py

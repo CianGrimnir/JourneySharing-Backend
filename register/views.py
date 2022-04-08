@@ -11,12 +11,17 @@ from rest_framework.status import (
 import logging
 from services import const
 import services.utils as utils
+
 services.logger.setLevel(logging.DEBUG)
 
 
 @csrf_exempt
 @api_view(["POST"])
 def user_register(request):
+    """
+    Register a new user with provided information.
+    Returns: HTTPSTATUS to indicate whether profile has been created.
+    """
     if request.method == "POST":
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         REQUIRED_FIELDS = ['first_name', 'last_name', 'email', 'gender', 'age', 'country', 'phone_number', 'password', 'confirm_password']
@@ -25,18 +30,20 @@ def user_register(request):
         else:
             request_data = request.data
         services.logger.info(f"request body - {request_data}")
+        # validate whether all required fields has been provided
         if not compare_dict(REQUIRED_FIELDS, request_data):
             services.logger.debug(f"reason - required field missing.")
             return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
         search_key = {'email': request_data['email'].lower()}
         get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
+        # If exception is raised from AWS API call
         if get_items.errors is not None:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f' bad request, error - {get_items.errors}',
                              }
             services.logger.debug(f"reason error - {get_items.__dict__}")
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
-
+        # Check if a user is already registered using same email_address
         if get_items.item is not None:
             email = request_data['email']
             response_body = {'status code': HTTP_400_BAD_REQUEST,
@@ -44,6 +51,8 @@ def user_register(request):
                              }
             services.logger.debug(f'email address - {email} already in use')
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
+        # Check for password mismatch problem.
+        # TODO: Add password validation check (whether the password is within the complaince).
         if request_data['password'] != request_data['confirm_password']:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'password mismatch!',

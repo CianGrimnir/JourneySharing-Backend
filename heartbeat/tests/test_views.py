@@ -11,11 +11,7 @@ services.logger.setLevel(logging.ERROR)
 
 
 class HealthCheckTest(TestCase):
-
-    def mocked_requests_get(self):
-        pass
-
-    @patch('journeysharing.app.MyAppConfig.ready', side_effect=mocked_requests_get)
+    @patch('journeysharing.app.MyAppConfig.ready')
     def test_proper_health_check(self, call_lb):
         call_lb.return_value = None
         factory = APIRequestFactory()
