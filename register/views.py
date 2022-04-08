@@ -52,7 +52,7 @@ def user_register(request):
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
         _ = request_data.pop('confirm_password')
         # request_data['user_id'] = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(15))
-        request_data['user_id'] = utils.generate_userid()
+        request_data['user_id'] = utils.generate_uniqid()
         response = dynamodbService.put_item_in_table('user_profiles', request_data)
         services.logger.debug(f"put item - {response}")
         if response.errors is not None and response.return_code is not Service.Response.OK:

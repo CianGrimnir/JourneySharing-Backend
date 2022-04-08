@@ -13,5 +13,5 @@ const.AWS_PROFILE = None
 const.REDIS_JOURNEY_KEY = "current_journey"
 # const.AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 # const.AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-const.AWS_ACCESS_KEY_ID = None
+const.AWS_ACCESS_KEY_ID = None 
 const.AWS_SECRET_ACCESS_KEY = None
