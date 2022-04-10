@@ -1,3 +1,4 @@
+from botocore.exceptions import ClientError
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from register.views import user_register
@@ -18,7 +19,7 @@ class UserRegisterTest(TestCase):
                             'phone_number': '123345453423', 'password': '12345', 'confirm_password': '12345'}
     already_in_use_register_body = {'first_name': 'daw', 'last_name': 'daw', 'email': 'dsa@daw.com', 'gender': 'male', 'age': '2222', 'country': 'ireland',
                                     'phone_number': '123345453423', 'password': '12345', 'confirm_password': '12345'}
-    mismatch_passwd_register_body = {'first_name': 'daw', 'daw': 'nair', 'email': 'dsa@daw.com', 'gender': 'male', 'age': '2222', 'country': 'ireland',
+    mismatch_passwd_register_body = {'first_name': 'daw', 'last_name': 'daw1', 'email': 'dsa@daw.com', 'gender': 'male', 'age': '2222', 'country': 'ireland',
                                      'phone_number': '123345453423', 'password': '123456', 'confirm_password': '12345'}
     missing_field_register_body = {'first_name': 'daw', 'last_name': 'daw', 'email': 'dsa@daw.com', 'age': '2222', 'country': 'ireland', 'phone_number': '123345453423',
                                    'password': '12345', 'confirm_password': '12345'}
@@ -30,6 +31,10 @@ class UserRegisterTest(TestCase):
     already_in_use_get_item_response = Service.build_ok_response(**{
         'item': {'password': 'asddsa', 'user_id': 'asdffsda', 'last_name': 'dsa123', 'first_name': 'asd', 'phone_number': Decimal('123544586765'), 'email': 'dsa@daw.com',
                  'country': 'ireland', 'age': Decimal('33')}})
+    getItem_clientError = ClientError({'Error': {'Code': 'ResourceNotFoundException', 'Message': 'Not Found'}}, 'GetItem')
+    bad_mock_getItem_call = Service.build_error_response(getItem_clientError)
+    putItem_clientError = ClientError({'Error': {'Code': 'ResourceNotFoundException', 'Message': 'Not Found'}}, 'PutItem')
+    bad_mock_putItem_call = Service.build_error_response(getItem_clientError)
 
     @patch("services.dynamodb.DynamoDbService.get_item_from_table")
     @patch("services.dynamodb.DynamoDbService.put_item_in_table")
@@ -68,5 +73,25 @@ class UserRegisterTest(TestCase):
         put_item.return_value = put_item_response
         factory = APIRequestFactory()
         request = factory.post('/register/register', self.missing_field_register_body)
+        response = user_register(request)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+    @patch("services.dynamodb.DynamoDbService.get_item_from_table")
+    @patch("services.dynamodb.DynamoDbService.put_item_in_table")
+    def test_error_from_dynamodb(self, put_item, get_item, put_item_response=None, mock_api_call=bad_mock_getItem_call):
+        get_item.return_value = mock_api_call
+        put_item.return_value = put_item_response
+        factory = APIRequestFactory()
+        request = factory.post('/register/register', self.proper_register_body)
+        response = user_register(request)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+    @patch("services.dynamodb.DynamoDbService.get_item_from_table")
+    @patch("services.dynamodb.DynamoDbService.put_item_in_table")
+    def test_aws_api_call_issue(self, put_item, get_item, put_item_response=bad_mock_putItem_call):
+        get_item.return_value = Service.build_ok_response(**{'item': None})
+        put_item.return_value = put_item_response
+        factory = APIRequestFactory()
+        request = factory.post('/register/register', self.proper_register_body)
         response = user_register(request)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)

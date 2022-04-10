@@ -20,8 +20,8 @@ class Redis:
         """
         Add newly created journey to the sorted set based on key-name.
         :param key: unique key-name used for maintaining a sorted set.
+        :param journey_id: Unique id generated for tracking journey information.
         :param journey_detail: journey related information.
-        :param score: score value used for sorting the set.
         """
         self.redis_client.hset(key, journey_id, json.dumps(journey_detail))    
         
@@ -29,26 +29,26 @@ class Redis:
         """
         return a range of journey details from sorted key 'key', between 'start' and 'end' in asc order.
         usage: get_current_journey('sortedJourney')
-        :param key: unique key-name used for maintaining a sorted set.
-        :param start: <start> argument denotes the starting range of the set.
-        :param end: <end> argument denotes the stopping range of the set.
-        :return: returns list with elements between <start> and <end> range.
+        :param key: unique key-name that will have stored all current journeys.
+        :return: returns list with all current journeys.
         """
         return self.redis_client.hgetall(key)
 
-    def get_journey_from_journeyid(self, key: str, journey_id: str):
+    def get_journey_from_journey_id(self, key: str, journey_id: str):
         """
         get the value of the key.
-        :param key: the key that will be used to extract the value.
-        :return: the value.
+        :param key: The unique key that have all current journey stored in it.
+        :param journey_id: the key that will be used to extract the requested journey information.
+        :return: the journey information using requested journey_id.
         """
         return self.redis_client.hget(key, journey_id)
 
-    def delete_journey_from_journeyid(self, key: str, journey_id: str):
+    def delete_journey_from_journey_id(self, key: str, journey_id: str):
         """
         Remove a journey with key as journey_id
-        :param key: the key that will be used to extract the value.
-        :param values: the value to be removed.
+        :param key: The unique key that have all current journey stored in it.
+        :param journey_id: the key that will be used to extract the requested journey information.
+        :return: Removed the journey using the provided journey_id.
         """
         return self.redis_client.hdel(key, journey_id)
 

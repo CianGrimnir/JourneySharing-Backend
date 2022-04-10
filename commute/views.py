@@ -1,11 +1,8 @@
 import django.http.request
 from django.views.decorators.csrf import csrf_exempt
-from statistics import mode
-from django.shortcuts import render
 from services.redis import Redis
 import services
 import logging
-from services import const
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -19,8 +16,10 @@ import json
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
+
 services.logger.setLevel(logging.DEBUG)
 import services.utils as utils
+
 
 def match_locations(request_list, requested_journey):
     matched_journeys = []
@@ -36,6 +35,7 @@ def match_locations(request_list, requested_journey):
             matched_journeys.append(request_list[i])
     return matched_journeys
 
+
 def match_journey_requests(journey_id):
     # search all req jouney
     redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
@@ -43,18 +43,19 @@ def match_journey_requests(journey_id):
     src_matched_locs = []
     des_matched_locs = []
     current_journeys = []
-    requested_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id))
+    requested_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id))
     if requested_journey is None:
         services.logger.error('No journey found with the given journey ID')
         return;
     for journey in all_journeys:
-        if (journey == journey_id):
+        if journey == journey_id:
             continue
-        curr_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey))
+        curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey))
         current_journeys.append(curr_journey)
     src_matched_locs = match_locations(current_journeys, requested_journey)
     des_matched_locs = match_locations(src_matched_locs, requested_journey)
     return des_matched_locs
+
 
 # Create your views here.
 # user_id,slat, slong, dlat, dlong, preferred_mode, radius, time
@@ -108,32 +109,36 @@ def new_journey_user_request(request):
                          }
         return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
+
 def start_journey(journey_id):
     pass
+
 
 def notify_user(message):
     pass
 
+
 def join_existing_journey(journey_id_self, journey_id_to_join):
     redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-    curr_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id_self))
-    join_journey = json.loads(redis_client.get_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id_to_join))
-    drop_points = []
-    drop_points.append(join_journey["drop_points"])
-    drop_points.append(curr_journey["drop_points"])
+    curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self))
+    join_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_to_join))
+    drop_points = [join_journey["drop_points"], curr_journey["drop_points"]]
     join_journey["drop_points"] = drop_points
-    redis_client.delete_journey_from_journeyid(const.REDIS_JOURNEY_KEY, journey_id_self)
+    redis_client.delete_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self)
+
 
 def calc_start_pt():
     pass
 
+
 def rate_journey():
     pass
+
 
 def end_journey():
     pass
 
-# TODO: Add validator methods to verify the compliance's for email and password
+
 def compare_dict(required_field, request_data):
     for field in required_field:
         if field not in request_data:

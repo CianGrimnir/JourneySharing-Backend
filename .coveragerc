@@ -1,0 +1,21 @@
+[run]
+branch = True
+omit =
+    */urls.py
+    */admin.py
+    ./manage.py
+    ./setup.py
+    */*sgi.py
+
+[report]
+show_missing = True
+omit =
+    */urls.py
+    */admin.py
+    ./manage.py
+    ./setup.py
+    */*sgi.py
+
+[html]
+title = Journey Sharing Python Test Coverage Report
+directory = reports/cover

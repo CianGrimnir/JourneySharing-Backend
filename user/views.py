@@ -11,15 +11,17 @@ from rest_framework.status import (
 import logging
 from services import const
 
-services.logger.setLevel(logging.DEBUG)
+services.logger.setLevel(logging.INFO)
 
 
-# Create your views here.
 @csrf_exempt
 @api_view(["POST"])
 def get_user_profile(request):
-    if request.method == 'POST':            # check with get as well
-        services.logger.debug(f'request body - {request.data}')
+    """
+    returns the profile information of the requested user.
+    returns: HTTPResponse with profile information as dict.
+    """
+    if request.method == 'POST':
         redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         # TODO: add mechanism to verify and secure this profile sharing communication.
         request_token = request.data.get("token")
@@ -37,14 +39,17 @@ def get_user_profile(request):
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
         dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
         search_key = {'email': email_address}
+        # fetch profile information from the dynamodb using email_address as primary key.
         get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
         services.logger.info(f"output from dynamodb - {get_items}")
+        # If exception is raised from AWS API call
         if get_items.errors is not None:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'user - {email_address} bad request, error - {get_items.errors}',
                              }
             services.logger.info(get_items.reason)
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
+        # If there is no information for provided user information
         elif get_items.item is None:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': 'user - ' + str(email_address) + ' not found',
@@ -59,8 +64,3 @@ def get_user_profile(request):
                          'body': user_profile,
                          }
         return Response(response_body, status=HTTP_200_OK)
-    else:
-        response_body = {'status code': HTTP_400_BAD_REQUEST,
-                         'body': f'BAD REQUEST - expected POST, got {request.method}',
-                         }
-        return Response(response_body, status=HTTP_400_BAD_REQUEST)

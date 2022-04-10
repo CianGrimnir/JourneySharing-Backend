@@ -12,6 +12,3 @@ class User(models.Model):
     email = models.CharField(max_length=30)
     phone_number = models.BigIntegerField()
     # Add validator method to verify email and other data validity.
-
-    def __str__(self):
-        return self.first_name + " " + self.last_name
