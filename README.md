@@ -1,3 +1,5 @@
+[![Django CI](https://github.com/CianGrimnir/JourneySharing-Backend/actions/workflows/django.yml/badge.svg)](https://github.com/CianGrimnir/JourneySharing-Backend/actions/workflows/django.yml)
+
 # JourneySharing-Backend
 
 
