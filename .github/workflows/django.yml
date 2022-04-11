@@ -34,4 +34,4 @@ jobs:
         coverage run --source=. -m pytest -v .
     - name: Generate Coverage report
       run: |
-        coverage report -m
+        coverage report -m --fail-under=90
