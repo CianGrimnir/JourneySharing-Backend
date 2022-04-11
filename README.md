@@ -2,13 +2,19 @@
 
 # JourneySharing-Backend
 
+## What is it?
 
-## Run below command to setup the server - 
+Backend service written in Django and other services for finding and sharing journeys with other users.  
+For Frontend see: https://github.com/ConorChurch/ase-journey-sharing
+
+## Getting Started
+
+### Install dependencies - 
 ```
 pip install -r requirements.txt
 ```
 
-## Start the server locally
+### How to start the server locally - 
 * Initialize redis server using below commands
 ```
 cd docker/
@@ -25,7 +31,7 @@ python manage.py runserver
 Django_Port=8091
 ```
 
-## Execute test cases for the backend service
+### How to execute test cases for the backend service -
 ```
 # set environment variables for module settings -
 ## NOT REQUIRED ANYMORE
