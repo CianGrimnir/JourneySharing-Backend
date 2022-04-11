@@ -45,6 +45,24 @@ get_table_response_empty = {'ResponseMetadata': {'RequestId': 'ASESU77GH5U7CSME2
                                                                  'content-length': '2', 'connection': 'keep-alive',
                                                                  'x-amzn-requestid': 'ASESU77GH5U7CSME2QDG90HCDNVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2745614147'},
                                                  'RetryAttempts': 0}}
+
+update_table_response = {'Attributes': {'country': 'Ireland', 'gender': 'Female'},
+                         'ResponseMetadata': {'RequestId': '3DV1A9ACNKDV2UKQDMM65045ABVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200,
+                                              'HTTPHeaders': {'server': 'Server',
+                                                              'date': 'Mon, 11 Apr 2022 11:42:56 GMT', 'content-type': 'application/x-amz-json-1.0',
+                                                              'content-length': '66', 'connection': 'keep-alive',
+                                                              'x-amzn-requestid': '3DV1A9ACNKDV2UKQDMM65045ABVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '473843940'},
+                                              'RetryAttempts': 0}}
+update_table_response_populated = {'country': 'Ireland', 'gender': 'Female'}
+update_values = {'country': 'Ireland', 'gender': 'Female'}
+update_table_response_empty = {'ResponseMetadata': {'RequestId': '3DV1A9ACNKDV2UKQDMM65045ABVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200,
+                                                    'HTTPHeaders': {'server': 'Server',
+                                                                    'date': 'Mon, 11 Apr 2022 11:42:56 GMT', 'content-type': 'application/x-amz-json-1.0',
+                                                                    'content-length': '66', 'connection': 'keep-alive',
+                                                                    'x-amzn-requestid': '3DV1A9ACNKDV2UKQDMM65045ABVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '473843940'},
+                                                    'RetryAttempts': 0}}
+update_table_response_populated_empty = None
+
 the_table = 'login_table'
 
 
@@ -134,6 +152,35 @@ def test_get_table_item(is_ready, db_name, get_item_from_table_response, item_fr
         if is_ready:
             assert response.return_code == Service.Response.OK.return_code
             assert response.item == item_from_table
+        else:
+            assert response.return_code == Service.Response.UNAVAILABLE.return_code
+            assert response.item is None
+
+
+@pytest.mark.parametrize(
+    'is_ready, db_name, update_item_from_table_response, updated_item_from_table, updated_values', [
+        (True, the_table, update_table_response, update_table_response_populated, update_values),
+        (True, the_table, update_table_response_empty, update_table_response_populated_empty, {}),
+        (True, None, update_table_response_empty, None, {}),
+        (False, None, None, None, {})
+    ]
+)
+def test_update_table_item(is_ready, db_name, update_item_from_table_response, updated_item_from_table, updated_values):
+    # build out the service mocks
+    service_resource_mock = MagicMock()
+    ddb_table_mock = MagicMock()
+    ddb_table_mock.update_item.return_value = update_item_from_table_response
+    service_resource_mock.Table.return_value = ddb_table_mock
+
+    with patch('boto3.session.Session'):
+        manager = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
+        manager.service_resource = service_resource_mock
+        manager.is_ready = MagicMock(return_value=is_ready)
+        search_key = {'email': 'asd@dsa.com'}
+        response = manager.update_item(db_name, search_key, updated_values)
+        if is_ready:
+            assert response.return_code == Service.Response.OK.return_code
+            assert response.item == updated_item_from_table
         else:
             assert response.return_code == Service.Response.UNAVAILABLE.return_code
             assert response.item is None
