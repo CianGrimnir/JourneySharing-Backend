@@ -5,6 +5,7 @@ from services.response import ServicesApiResponse
 from typing import Dict
 from boto3.dynamodb.conditions import Key
 from services import const
+import services.utils as utils
 
 
 class DynamoDbService(Service):
@@ -37,7 +38,7 @@ class DynamoDbService(Service):
         https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.04.html
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/customizations/dynamodb.html#boto3.dynamodb.conditions.Key
 
-        :return: A ServicesApiError containing the following attributes:
+        :return: A ServicesApiResponse containing the following attributes:
             items - A list of all the matched items from DynamoDB table in Dict format. If
             there is no match then this value will contain an empty list.
         """
@@ -64,7 +65,7 @@ class DynamoDbService(Service):
         :param table_name: The DynamoDB table in question.
         :param item_data: data in the form of dictionary to be inserted in table
 
-        :return: A ServicesApiError containing the following attributes:
+        :return: A ServicesApiResponse containing the following attributes:
         Inserts the values from data provided as input in table.
         Returns exception if data already exists in table
         """
@@ -92,7 +93,7 @@ class DynamoDbService(Service):
         :param table_name: The DynamoDB table in question.
         :param search_key: dict representing the primary key of the item to retrieve.
 
-        :return: A ServicesApiError containing the following attributes:
+        :return: A ServicesApiResponse containing the following attributes:
         tables - Returns a Dict in key value pair for given search_key value.
         """
         ddb_table = self.service_resource.Table(table_name)
@@ -108,6 +109,34 @@ class DynamoDbService(Service):
                     if 'Item' in item_from_table:
                         search_item = item_from_table['Item']
                 response = Service.build_ok_response(**{'item': search_item})
+            except ClientError as e:
+                response = Service.build_error_response(e)
+        return response
+
+    def update_item(self, table_name: str, key: Dict, update_values: dict) -> ServicesApiResponse:
+        """
+        Update an existing attributes or adds a new attributes to the table if it does not already exist.
+        :param table_name:  The DynamoDB table in question.
+        :param key: dict representing the primary key of the item to retrieve.
+        :param update_values: The values to be updated in the mentioned table.
+        :return: A ServicesApiResponse containing the following attributes:
+        :tables - Returns a updated attributes for the mentioned key.
+        """
+        ddb_table = self.service_resource.Table(table_name)
+        updated_items = None
+        if not self.is_ready():
+            response = Service.build_unavailable_response(**{'tables': None, 'item': None})
+        else:
+            try:
+                if table_name is None:
+                    updated_items = None
+                else:
+                    update_expression, expression_value = utils.generate_expression(update_values)
+                    item_from_table = ddb_table.update_item(Key=key, UpdateExpression=update_expression,
+                                                            ExpressionAttributeValues=expression_value, ReturnValues="UPDATED_NEW")
+                    if 'Attributes' in item_from_table:
+                        updated_items = item_from_table['Attributes']
+                response = Service.build_ok_response(**{'item': updated_items})
             except ClientError as e:
                 response = Service.build_error_response(e)
         return response

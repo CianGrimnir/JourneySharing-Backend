@@ -3,7 +3,7 @@ import logging
 import os
 
 # get a logger for the package.
-logging.basicConfig(format='%(asctime)-15s  %(message)s')
+logging.basicConfig(format='%(asctime)-10s %(levelname)-10s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('journeySharing')
 
 # define some constants for the aws
