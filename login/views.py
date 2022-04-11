@@ -61,3 +61,32 @@ def user_login(request):
                              }
             services.logger.info(f'user_name {email_address} incorrect password')
             return Response(response_body, status=HTTP_401_UNAUTHORIZED)
+
+
+@csrf_exempt
+@api_view(["POST"])
+def user_logout(request):
+    """
+    Request handler for logging out the user's session.
+    """
+    email_address = request.data.get("email_address")
+    auth, reason = utils.check_request_auth(request)
+    if not auth:
+        response_body = {'status code': HTTP_400_BAD_REQUEST,
+                         'body': f'user - {request.data.get("email_address")} {reason} request token.',
+                         }
+        services.logger.info(f"username - {request.data.get('email_address')} {reason} request token.")
+        return Response(response_body, status=HTTP_400_BAD_REQUEST)
+    redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    logout_status = redis_client.delete_values(request.data.get("token"))
+    if logout_status:
+        response_body = {'status code': HTTP_200_OK,
+                         'body': f'user - {email_address} logged out successfully.',
+                         }
+        status_code = HTTP_200_OK
+    else:
+        response_body = {'status code': HTTP_400_BAD_REQUEST,
+                         'body': f'user - {email_address} bad request.',
+                         }
+        status_code = HTTP_400_BAD_REQUEST
+    return Response(response_body, status=status_code)

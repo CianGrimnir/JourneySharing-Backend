@@ -19,7 +19,7 @@ from journeysharing.app import MyAppConfig
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', include('login.urls')),
+    path('session/', include('login.urls')),
     path('register/', include('register.urls')),
     path('user/', include('user.urls')),
     path('health/', include('heartbeat.urls')),

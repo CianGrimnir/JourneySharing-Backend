@@ -10,7 +10,7 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_200_OK)
 import logging
-from services import const
+from services import const, utils
 
 services.logger.setLevel(logging.INFO)
 
@@ -23,16 +23,10 @@ def get_user_profile(request):
     returns: HTTPResponse with profile information as dict.
     """
     if request.method == 'POST':
-        redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         # TODO: add mechanism to verify and secure this profile sharing communication.
-        request_token = request.data.get("token")
         email_address = request.data.get("email_address")
-        auth_flag, reason = True, ""
-        if not request_token:
-            auth_flag, reason = False, "Missing"
-        elif not redis_client.get_values(request_token) or redis_client.get_values(request_token).decode("utf-8") != email_address:
-            auth_flag, reason = False, "Unauthorized"
-        if not auth_flag:
+        auth, reason = utils.check_request_auth(request)
+        if not auth:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'user - {email_address} {reason} request token.',
                              }
@@ -58,7 +52,7 @@ def get_user_profile(request):
             services.logger.info(f'user_name {email_address} does not exist in db')
             return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
-        request_profile = ['user_id', 'first_name', 'last_name', 'phone_number', 'email', 'country', 'age']
+        request_profile = ['user_id', 'first_name', 'last_name', 'phone_number', 'email', 'country', 'age', 'gender']
         user_profile = dict((k, get_items.item[k]) for k in request_profile)
         services.logger.info(f'{email_address} user request processed successfully.')
         response_body = {'status code': HTTP_200_OK,
@@ -75,15 +69,9 @@ def update_user_profile(request):
     returns: HTTPResponse with profile information as dict.
     """
     if request.method == 'POST':
-        redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-        request_token = request.data.get("token")
         email_address = request.data.get("email_address")
-        auth_flag, reason = True, ""
-        if not request_token:
-            auth_flag, reason = False, "Missing"
-        elif not redis_client.get_values(request_token) or redis_client.get_values(request_token).decode("utf-8") != email_address:
-            auth_flag, reason = False, "Unauthorized"
-        if not auth_flag:
+        auth, reason = utils.check_request_auth(request)
+        if not auth:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'user - {email_address} {reason} request token.',
                              }

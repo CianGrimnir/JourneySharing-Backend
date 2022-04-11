@@ -21,7 +21,7 @@ class GetUserProfileTest(TestCase):
     wrong_user_email_body = {'email_address': 'asd@dsa.co'}
     proper_mock_api_call = Service.build_ok_response(**{
         'item': {'password': 'asddsa', 'user_id': 'asdffsda', 'last_name': 'dsa123', 'first_name': 'asd', 'phone_number': Decimal('123544586765'), 'email': 'asd@dsa.com',
-                 'country': 'ireland', 'age': Decimal('33')}})
+                 'country': 'ireland', 'age': Decimal('33'), 'gender': 'Female'}})
     dynamodb_clientError = ClientError({'Error': {'Code': 'ResourceNotFoundException', 'Message': 'Not Found'}}, 'GetItem')
     bad_mock_api_call = Service.build_error_response(dynamodb_clientError)
     mock_token_api_call = b'asd@dsa.com'

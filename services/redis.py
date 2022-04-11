@@ -66,6 +66,13 @@ class Redis:
         :param key: the key that will be used to extract the value.
         :return: the value.
         """
-        return self.redis_client.get(key)    
+        return self.redis_client.get(key)
 
+    def delete_values(self, key: str) -> bool:
+        """
+        delete the value of the given key.
+        :param key: the key that will be used to delete the value.
+        :return: response indicating whether the value has been removed.
+        """
+        return bool(self.redis_client.delete(key))
 

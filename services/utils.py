@@ -1,6 +1,8 @@
 import os
 import binascii
 import uuid
+from journeysharing import settings
+from services.redis import Redis
 
 
 def get_token():
@@ -38,3 +40,22 @@ def generate_expression(attribute_values):
         if index != len(attribute_values) - 1:
             expression += ", "
     return expression, expressionValue
+
+
+def check_request_auth(request):
+    """
+    function to validate the token of the requested user.
+    :param request: 'HttpRequest' wrapper object.
+    :return: status of the logout request.
+    - auth_flag - contains the status of the logout request.
+    - reason - contains the error log if any error happens.
+    """
+    redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    request_token = request.data.get("token")
+    email_address = request.data.get("email_address")
+    auth_flag, reason = True, ""
+    if not request_token:
+        auth_flag, reason = False, "Missing"
+    elif not redis_client.get_values(request_token) or redis_client.get_values(request_token).decode("utf-8") != email_address:
+        auth_flag, reason = False, "Unauthorized"
+    return auth_flag, reason
