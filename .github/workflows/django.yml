@@ -32,4 +32,6 @@ jobs:
     - name: Run Tests
       run: |
         coverage run --source=. -m pytest -v .
+    - name: Generate Coverage report
+      run: |
         coverage report -m
