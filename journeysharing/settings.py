@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'health_check.contrib.psutil',  # disk and memory utilization; requires psutil
     'health_check.contrib.redis',  # requires Redis broker
     'corsheaders',
+    'sslserver',
     'login',
     'register',
     'user',
