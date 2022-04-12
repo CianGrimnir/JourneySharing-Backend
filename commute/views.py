@@ -63,7 +63,20 @@ def match_journey_requests(journey_id):
 @api_view(["POST"])
 def new_journey_user_request(request):
     if request.method == 'POST':
-        REQUIRED_FIELDS = ['user_id', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
+        redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+        request_token = request.data.get("token")
+        email_address = request.data.get("email_address")
+        print(request.data)
+        auth, reason = utils.check_request_auth(request)
+        print(auth, reason)
+        if not auth:
+            response_body = {'status code': HTTP_400_BAD_REQUEST,
+                             'body': f'user - {email_address} {reason} request token.',
+                             }
+            services.logger.info(f"username - {email_address} {reason} request token.")
+            return Response(response_body, status=HTTP_400_BAD_REQUEST)
+
+        REQUIRED_FIELDS = ['email_address', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
         if isinstance(request.data, django.http.request.QueryDict):
             request_data = request.data.dict()
         else:
@@ -72,8 +85,7 @@ def new_journey_user_request(request):
         if not compare_dict(REQUIRED_FIELDS, request_data):
             services.logger.debug(f"CANNOT process req, reason - required field missing.")
             return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
-        else:
-            redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+        else:            
             user_id = request.data.get("user_id")
             slat = request.data.get("slat")
             slong = request.data.get("slong")
@@ -97,17 +109,13 @@ def new_journey_user_request(request):
                                        'radius': radius,
                                        'time': time,
                                        'drop_points': drop_points}
-            journey_data = json.dumps(journey_request_details).encode('utf-8')
+            journey_data = json.dumps(journey_request_details)
             redis_client.set_values(journey_id, journey_data)
             redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_request_details, time)
             match_journey_requests(journey_id)
             response_body = {'status code': HTTP_200_OK}
             return Response(response_body, status=HTTP_200_OK)
-    else:
-        response_body = {'status code': HTTP_400_BAD_REQUEST,
-                         'body': f'BAD REQUEST - expected POST, got {request.method}',
-                         }
-        return Response(response_body, status=HTTP_400_BAD_REQUEST)
+   
 
 
 def start_journey(journey_id):
