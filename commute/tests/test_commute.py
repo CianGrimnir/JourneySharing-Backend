@@ -32,7 +32,6 @@ class CommuteRequestTest(TestCase):
         {'journeyID': 'ed9b3c5cad054d0', 'userID': '2674c06e79e44ef', 'src_lat': 5.8, 'src_long': 4.8, 'des_lat': 3.93, 'des_long': 5.8, 'preferred_mode': 'asd', 'radius': 555,
          'time': 23434, 'drop_points': {'2674c06e79e44ef': [3.93, 5.8]}}]
     mock_missing_token_api_call = None
-    #######################################
     mock_proper_token_api_call = b'asd@dsa.com'
 
     @patch('services.redis.Redis.get_values')
@@ -42,8 +41,7 @@ class CommuteRequestTest(TestCase):
         request = factory.post('/commute/createNewRequest/', self.missing_token_body)
         response = new_journey_user_request(request)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
-
-    #####################################
+        
     @patch('services.redis.Redis.get_values')
     @patch('services.redis.Redis.set_values')
     @patch('services.redis.Redis.add_new_journey')

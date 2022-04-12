@@ -54,6 +54,8 @@ def match_journey_requests(journey_id):
         current_journeys.append(curr_journey)
     src_matched_locs = match_locations(current_journeys, requested_journey)
     des_matched_locs = match_locations(src_matched_locs, requested_journey)
+
+    
     return des_matched_locs
 
 
@@ -111,7 +113,7 @@ def new_journey_user_request(request):
                                        'drop_points': drop_points}
             journey_data = json.dumps(journey_request_details)
             redis_client.set_values(journey_id, journey_data)
-            redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_request_details, time)
+            redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_id, journey_request_details)
             match_journey_requests(journey_id)
             response_body = {'status code': HTTP_200_OK}
             return Response(response_body, status=HTTP_200_OK)
