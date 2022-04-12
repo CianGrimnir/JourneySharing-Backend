@@ -32,7 +32,7 @@ class UserLoginTest(TestCase):
         mock_redis_set_values.return_value = None
         mock_get_items.return_value = mock_api_call
         factory = APIRequestFactory()
-        request = factory.post('/login/login/', self.proper_login_body)
+        request = factory.post('/session/login/', self.proper_login_body)
         response = user_login(request)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
@@ -42,7 +42,7 @@ class UserLoginTest(TestCase):
         mock_redis_set_values.return_value = None
         mock_set_items.return_value = mock_api_call
         factory = APIRequestFactory()
-        request = factory.post('/login/login/', self.wrong_password_login_body)
+        request = factory.post('/session/login/', self.wrong_password_login_body)
         response = user_login(request)
         self.assertEqual(response.status_code, HTTP_401_UNAUTHORIZED)
 
@@ -52,7 +52,7 @@ class UserLoginTest(TestCase):
         mock_redis_set_values.return_value = None
         mock_set_items.return_value = mock_api_call
         factory = APIRequestFactory()
-        request = factory.post('/login/', self.wrong_login_body)
+        request = factory.post('/session/login/', self.wrong_login_body)
         response = user_login(request)
         self.assertEqual(response.status_code, HTTP_401_UNAUTHORIZED)
 
@@ -62,6 +62,6 @@ class UserLoginTest(TestCase):
         mock_redis_set_values.return_value = None
         mock_get_items.return_value = mock_api_call
         factory = APIRequestFactory()
-        request = factory.post('/login/login/', self.proper_login_body)
+        request = factory.post('/session/login/', self.proper_login_body)
         response = user_login(request)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)

@@ -21,4 +21,4 @@ class MyAppConfig:
             resp = requests.get(url + self.current_port)
         except requests.exceptions.ConnectionError:
             resp = False
-        return Response(status=HTTP_204_NO_CONTENT)
+        return Response(status=HTTP_204_NO_CONTENT, data=resp)

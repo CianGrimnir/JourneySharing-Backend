@@ -5,21 +5,21 @@ from journeysharing import settings
 from services.redis import Redis
 
 
-def get_token():
+def get_token() -> str:
     """
     Function for generating a login token.
     """
     return binascii.hexlify(os.urandom(20)).decode()
 
 
-def generate_uniqid():
+def generate_uniqid() -> str:
     """
     Function for generating a unique identifier for journey_id.
     """
     return uuid.uuid4().hex[:15]
 
 
-def generate_expression(attribute_values):
+def generate_expression(attribute_values) -> (str, dict):
     """
     function for generating an expression strings required for DynamoDB update call.
     :param attribute_values: values to be updated in the DynamoDB table.
@@ -30,19 +30,19 @@ def generate_expression(attribute_values):
     expression = "SET "
     place_holder = "var"
     counter = 1
-    expressionValue = {}
+    expression_value = {}
     for index, (k, v) in enumerate(attribute_values.items()):
         temp_expression = f":{place_holder}{counter}"
         temp_exp = f"{k}= {temp_expression}"
         expression += temp_exp
-        expressionValue[temp_expression] = v
+        expression_value[temp_expression] = v
         counter += 1
         if index != len(attribute_values) - 1:
             expression += ", "
-    return expression, expressionValue
+    return expression, expression_value
 
 
-def check_request_auth(request):
+def check_request_auth(request) -> (bool, str):
     """
     function to validate the token of the requested user.
     :param request: 'HttpRequest' wrapper object.
@@ -59,3 +59,15 @@ def check_request_auth(request):
     elif not redis_client.get_values(request_token) or redis_client.get_values(request_token).decode("utf-8") != email_address:
         auth_flag, reason = False, "Unauthorized"
     return auth_flag, reason
+
+
+def build_response_dict(status_code: int, message: str) -> dict:
+    """
+    function for building response dict.
+    :param status_code: HTTP response code.
+    :param message: response body.
+    :return: response dictionary
+    """
+    return {'status code': status_code,
+            'body': message
+            }

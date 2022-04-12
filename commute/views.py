@@ -110,14 +110,6 @@ def new_journey_user_request(request):
         return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
 
-def start_journey(journey_id):
-    pass
-
-
-def notify_user(message):
-    pass
-
-
 def join_existing_journey(journey_id_self, journey_id_to_join):
     redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
     curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self))
@@ -125,18 +117,6 @@ def join_existing_journey(journey_id_self, journey_id_to_join):
     drop_points = [join_journey["drop_points"], curr_journey["drop_points"]]
     join_journey["drop_points"] = drop_points
     redis_client.delete_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self)
-
-
-def calc_start_pt():
-    pass
-
-
-def rate_journey():
-    pass
-
-
-def end_journey():
-    pass
 
 
 def compare_dict(required_field, request_data):
