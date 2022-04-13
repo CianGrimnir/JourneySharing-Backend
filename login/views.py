@@ -16,7 +16,7 @@ services.logger.setLevel(logging.DEBUG)
 
 
 # Create your views here.
-@ratelimit(key='ip', rate='10/s', block=True)
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def user_login(request):
     """
@@ -63,7 +63,7 @@ def user_login(request):
             return Response(response_body, status=HTTP_401_UNAUTHORIZED)
 
 
-@ratelimit(key='ip', rate='10/s', block=True)
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def user_logout(request):
     """

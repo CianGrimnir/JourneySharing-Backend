@@ -59,7 +59,7 @@ def match_journey_requests(journey_id):
 
 # Create your views here.
 # user_id,slat, slong, dlat, dlong, preferred_mode, radius, time
-@ratelimit(key='ip', rate='10/s', block=True)
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def new_journey_user_request(request):
     if request.method == 'POST':

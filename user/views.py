@@ -13,7 +13,7 @@ from services import const, utils
 services.logger.setLevel(logging.INFO)
 
 
-@ratelimit(key='ip', rate='10/s', block=True)
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def get_user_profile(request):
     """
@@ -59,7 +59,7 @@ def get_user_profile(request):
         return Response(response_body, status=HTTP_200_OK)
 
 
-@ratelimit(key='ip', rate='10/s', block=True)
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def update_user_profile(request):
     """

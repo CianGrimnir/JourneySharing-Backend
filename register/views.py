@@ -15,7 +15,7 @@ import services.utils as utils
 services.logger.setLevel(logging.DEBUG)
 
 
-@ratelimit(key='ip', rate='10/s', block=True)
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def user_register(request):
     """
