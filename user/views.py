@@ -1,10 +1,8 @@
-from django.views.decorators.csrf import csrf_exempt
+from ratelimit.decorators import ratelimit
 import django.http.request
-from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from services.dynamodb import DynamoDbService
-from services.redis import Redis
 import services
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
@@ -15,7 +13,7 @@ from services import const, utils
 services.logger.setLevel(logging.INFO)
 
 
-@csrf_exempt
+@ratelimit(key='ip', rate='10/s', block=True)
 @api_view(["POST"])
 def get_user_profile(request):
     """
@@ -61,7 +59,7 @@ def get_user_profile(request):
         return Response(response_body, status=HTTP_200_OK)
 
 
-@csrf_exempt
+@ratelimit(key='ip', rate='10/s', block=True)
 @api_view(["POST"])
 def update_user_profile(request):
     """
@@ -106,4 +104,3 @@ def update_user_profile(request):
                          'body': update_items.item,
                          }
         return Response(response_body, status=HTTP_200_OK)
-
