@@ -16,18 +16,29 @@ import json
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
+from services.dynamodb import DynamoDbService
 
 services.logger.setLevel(logging.DEBUG)
 import services.utils as utils
 
-
 def match_locations(request_list, requested_journey):
     matched_journeys = []
+    print("REQ LIST TYPE", type(request_list))
+    
     bt = pd.DataFrame(request_list)
+    print("BT TYPE", type(bt))
+    print(bt)
+    print("BT SLAT")
     if bt.empty:
         services.logger.error('No data in balltree')
         return 0
-    tree_list = BallTree(np.deg2rad(bt[['src_lat', 'src_long']].values), metric='haversine')
+
+    a = bt['src_lat'].to_numpy()
+    b = bt['src_long'].to_numpy()
+    print("a shape:", a.shape, " b shape: ", b.shape)
+    x = np.vstack([a,b])
+    x = x.T
+    tree_list = BallTree(np.deg2rad(x), metric='haversine')
     indices = tree_list.query_radius(np.deg2rad(np.c_[requested_journey['src_lat'], requested_journey['src_long']]),
                                      r=requested_journey['radius'])
     for idx in indices.tolist():
@@ -55,7 +66,6 @@ def match_journey_requests(journey_id):
     src_matched_locs = match_locations(current_journeys, requested_journey)
     des_matched_locs = match_locations(src_matched_locs, requested_journey)
 
-    
     return des_matched_locs
 
 
@@ -88,11 +98,10 @@ def new_journey_user_request(request):
             services.logger.debug(f"CANNOT process req, reason - required field missing.")
             return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
         else:            
-            user_id = request.data.get("user_id")
-            slat = request.data.get("slat")
-            slong = request.data.get("slong")
-            dlat = request.data.get("dlat")
-            dlong = request.data.get("dlong")
+            slat = float(request.data.get("slat"))
+            slong = float(request.data.get("slong"))
+            dlat = float(request.data.get("dlat"))
+            dlong = float(request.data.get("dlong"))
             preferred_mode = request.data.get("preferred_mode")
             radius = request.data.get("radius")
             time = request.data.get("time")
@@ -100,9 +109,9 @@ def new_journey_user_request(request):
             services.logger.debug(f'Creating new journey request with data: {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
             drop_points = {}
             destination = [dlat, dlong]
-            drop_points.setdefault("user_id", []).append(destination)
+            drop_points.setdefault("email_address", []).append(destination)
             journey_request_details = {'journeyID': journey_id,
-                                       'userID': user_id,
+                                       'email_address': email_address,
                                        'src_lat': slat,
                                        'src_long': slong,
                                        'des_lat': dlat,
@@ -114,12 +123,27 @@ def new_journey_user_request(request):
             journey_data = json.dumps(journey_request_details)
             redis_client.set_values(journey_id, journey_data)
             redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_id, journey_request_details)
-            match_journey_requests(journey_id)
-            response_body = {'status code': HTTP_200_OK}
-            return Response(response_body, status=HTTP_200_OK)
-   
+            matched_journeys = match_journey_requests(journey_id)
+        
+            if matched_journeys:
+                dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
+                for journey in matched_journeys:
+                    print(journey)
+                    search_key = {'email': journey['email_address']}
+                    # fetch profile information from the dynamodb using email_address as primary key.
+                    get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
+                    services.logger.info(f"output from dynamodb - {get_items}")
+                    print(get_items.item['first_name'])
+                    journey["first_name"] = get_items.item['first_name']
+                    journey["country"] = get_items.item['country']
+                    journey["age"] = get_items.item['age']
+                    journey["gender"] = get_items.item['gender']
 
+        response_body = {'status code': HTTP_200_OK,
+                         'body': matched_journeys  }
 
+        return Response(response_body, status=HTTP_200_OK)
+    
 def start_journey(journey_id):
     pass
 
