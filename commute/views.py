@@ -23,15 +23,13 @@ import services.utils as utils
 
 def match_locations(request_list, requested_journey):
     matched_journeys = []
-    print("REQ LIST TYPE", type(request_list))
+    print(request_list)
     
     bt = pd.DataFrame(request_list)
-    print("BT TYPE", type(bt))
     print(bt)
-    print("BT SLAT")
     if bt.empty:
-        services.logger.error('No data in balltree')
-        return 0
+       services.logger.error('No data in balltree')
+       return 0
 
     a = bt['src_lat'].to_numpy()
     b = bt['src_long'].to_numpy()
@@ -43,6 +41,9 @@ def match_locations(request_list, requested_journey):
                                      r=requested_journey['radius'])
     for idx in indices.tolist():
         for i in idx:
+            if request_list[i]["email_address"] == requested_journey["email_address"]:
+                print("SAME USER, SKIPPING...")
+                continue
             matched_journeys.append(request_list[i])
     return matched_journeys
 
@@ -68,6 +69,15 @@ def match_journey_requests(journey_id):
 
     return des_matched_locs
 
+def create_new_journey(journey_data):
+    journey_id = utils.generate_uniqid()
+    redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    journey_data["journeyID"] = journey_id
+    redis_client.set_values(journey_id, json.dumps(journey_data))
+    redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_id, journey_data)
+    services.logger.info(f"New journey created: journey data: ", journey_data)
+    return journey_id
+
 
 # Create your views here.
 # user_id,slat, slong, dlat, dlong, preferred_mode, radius, time
@@ -86,7 +96,7 @@ def new_journey_user_request(request):
                              'body': f'user - {email_address} {reason} request token.',
                              }
             services.logger.info(f"username - {email_address} {reason} request token.")
-            return Response(response_body, status=HTTP_400_BAD_REQUEST)
+            #return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
         REQUIRED_FIELDS = ['email_address', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
         if isinstance(request.data, django.http.request.QueryDict):
@@ -97,32 +107,39 @@ def new_journey_user_request(request):
         if not compare_dict(REQUIRED_FIELDS, request_data):
             services.logger.debug(f"CANNOT process req, reason - required field missing.")
             return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
-        else:            
+        else:    
+            journey_id = request.data.get("journey_id")        
             slat = float(request.data.get("slat"))
             slong = float(request.data.get("slong"))
             dlat = float(request.data.get("dlat"))
             dlong = float(request.data.get("dlong"))
             preferred_mode = request.data.get("preferred_mode")
-            radius = request.data.get("radius")
+            radius = int(request.data.get("radius"))
             time = request.data.get("time")
-            journey_id = utils.generate_uniqid()
-            services.logger.debug(f'Creating new journey request with data: {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
-            drop_points = {}
-            destination = [dlat, dlong]
-            drop_points.setdefault("email_address", []).append(destination)
-            journey_request_details = {'journeyID': journey_id,
-                                       'email_address': email_address,
-                                       'src_lat': slat,
-                                       'src_long': slong,
-                                       'des_lat': dlat,
-                                       'des_long': dlong,
-                                       'preferred_mode': preferred_mode,
-                                       'radius': radius,
-                                       'time': time,
-                                       'drop_points': drop_points}
-            journey_data = json.dumps(journey_request_details)
-            redis_client.set_values(journey_id, journey_data)
-            redis_client.add_new_journey(const.REDIS_JOURNEY_KEY, journey_id, journey_request_details)
+            if journey_id is None:
+                services.logger.debug(f'Creating new journey request with data: \
+                {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
+                drop_points = {}
+                destination = [dlat, dlong]
+                drop_points.setdefault(email_address, []).append(destination)
+                journey_request_details = {'journeyID': journey_id,
+                                           'email_address': email_address,
+                                           'src_lat': slat,
+                                           'src_long': slong,
+                                           'des_lat': dlat,
+                                           'des_long': dlong,
+                                           'preferred_mode': preferred_mode,
+                                           'radius': radius,
+                                           'time': time,
+                                           'drop_points': drop_points}
+
+                #journey_data = json.dumps(journey_request_details)
+                journey_id = create_new_journey(journey_request_details)
+            else:
+                 services.logger.debug(f'journey already exists for the user, not creating a new one, only searching for matches')
+                   
+            
+            
             matched_journeys = match_journey_requests(journey_id)
         
             if matched_journeys:
@@ -139,8 +156,14 @@ def new_journey_user_request(request):
                     journey["age"] = get_items.item['age']
                     journey["gender"] = get_items.item['gender']
 
-        response_body = {'status code': HTTP_200_OK,
-                         'body': matched_journeys  }
+        if matched_journeys:
+            response_body = {'status code': HTTP_200_OK,
+                             'journey_id': journey_id,   
+                             'body': matched_journeys  }
+        else:
+            response_body = {'status code': HTTP_200_OK,
+                             'journey_id': journey_id,   
+                             'body': "No journey matches found yet"  }                     
 
         return Response(response_body, status=HTTP_200_OK)
     
@@ -151,7 +174,8 @@ def start_journey(journey_id):
 def notify_user(message):
     pass
 
-
+@csrf_exempt
+@api_view(["POST"])
 def join_existing_journey(journey_id_self, journey_id_to_join):
     redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
     curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self))
