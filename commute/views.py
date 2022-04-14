@@ -158,11 +158,19 @@ def new_journey_user_request(request):
                     journey["country"] = get_items.item['country']
                     journey["age"] = get_items.item['age']
                     journey["gender"] = get_items.item['gender']
+                    break
 
+        print("FINAL:: ", matched_journeys)        
+
+        
         if matched_journeys:
             response_body = {'status code': HTTP_200_OK,
                              'journey_id': journey_id,   
-                             'body': matched_journeys  }
+                             'email_address': matched_journeys["email_address"],
+                             'src_lat': matched_journeys["src_lat"],
+                             'src_long': matched_journeys["src_lat"],
+                             'des_lat': matched_journeys["des_lat"],
+                             'des_long': matched_journeys["des_long"] }
         else:
             response_body = {'status code': HTTP_200_OK,
                              'journey_id': journey_id,   
