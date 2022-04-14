@@ -106,7 +106,7 @@ def new_journey_user_request(request):
         services.logger.info(f"request body - {request_data}")
         if not compare_dict(REQUIRED_FIELDS, request_data):
             services.logger.debug(f"CANNOT process req, reason - required field missing.")
-            return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
+            return Response({'message': 'required field missing',  }, request_data,  status=HTTP_400_BAD_REQUEST)
         else:    
             journey_id = request.data.get("journey_id")        
             slat = float(request.data.get("slat"))
