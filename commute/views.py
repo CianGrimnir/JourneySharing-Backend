@@ -42,7 +42,7 @@ def match_locations(request_list, requested_journey):
     for idx in indices.tolist():
         for i in idx:
             if request_list[i]["email_address"] == requested_journey["email_address"]:
-                print("SAME USER, SKIPPING...")
+                # This is the current journey detail, we don't want to add this to our balltree     
                 continue
             matched_journeys.append(request_list[i])
     return matched_journeys
