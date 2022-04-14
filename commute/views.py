@@ -165,7 +165,7 @@ def new_journey_user_request(request):
         else:
             response_body = {'status code': HTTP_200_OK,
                              'journey_id': journey_id,   
-                             'body': "No journey matches found yet"  }                     
+                             'body': []  }                     
 
         return Response(response_body, status=HTTP_200_OK)
     
@@ -183,16 +183,21 @@ def join_existing_journey(request):
     if request.method == 'POST':
         journey_id_self = request.data.get("journey_id_self")
         journey_id_to_join = request.data.get("journey_id_to_join")
+        print("journey_id_self: ", type(journey_id_self), " journey_id_to_join: ", type(journey_id_to_join))
         redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-        curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self))
-        join_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_to_join))
+        curr_journey = json.loads(redis_client.get_values(journey_id_self))
+        join_journey = json.loads(redis_client.get_values(journey_id_to_join))
         drop_points = [join_journey["drop_points"], curr_journey["drop_points"]]
         join_journey["drop_points"] = drop_points
+        redis_client.set_values(journey_id_to_join, json.dumps(join_journey))
         redis_client.delete_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self)
 
         response_body = {'status code': HTTP_200_OK,
                          'journey_id': journey_id_to_join,   
-                         'drop points': drop_points  }                     
+                         'dest_lat': join_journey["des_lat"],
+                         'dest_long': join_journey["des_long"],
+                         'start_lat': join_journey["src_lat"],
+                         'start_long': join_journey["src_long"] }                     
 
         return Response(response_body, status=HTTP_200_OK)
 
