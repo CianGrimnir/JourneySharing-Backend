@@ -98,46 +98,47 @@ def new_journey_user_request(request):
             services.logger.info(f"username - {email_address} {reason} request token.")
             #return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
-        REQUIRED_FIELDS = ['email_address', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
-        if isinstance(request.data, django.http.request.QueryDict):
-            request_data = request.data.dict()
-        else:
-            request_data = request.data
-        services.logger.info(f"request body - {request_data}")
-        if not compare_dict(REQUIRED_FIELDS, request_data):
-            services.logger.debug(f"CANNOT process req, reason - required field missing.")
-            return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
-        else:    
-            journey_id = request.data.get("journey_id")        
-            slat = float(request.data.get("slat"))
-            slong = float(request.data.get("slong"))
-            dlat = float(request.data.get("dlat"))
-            dlong = float(request.data.get("dlong"))
-            preferred_mode = request.data.get("preferred_mode")
-            radius = int(request.data.get("radius"))
-            time = request.data.get("time")
-            if journey_id is None:
-                services.logger.debug(f'Creating new journey request with data: \
-                {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
-                drop_points = {}
-                destination = [dlat, dlong]
-                drop_points.setdefault(email_address, []).append(destination)
-                journey_request_details = {'journeyID': journey_id,
-                                           'email_address': email_address,
-                                           'src_lat': slat,
-                                           'src_long': slong,
-                                           'des_lat': dlat,
-                                           'des_long': dlong,
-                                           'preferred_mode': preferred_mode,
-                                           'radius': radius,
-                                           'time': time,
-                                           'drop_points': drop_points}
+        #REQUIRED_FIELDS = ['email_address', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
+        #if isinstance(request.data, django.http.request.QueryDict):
+        #    request_data = request.data.dict()
+        #else:
+        #    request_data = request.data
+        #services.logger.info(f"request body - {request_data}")
+        #if not compare_dict(REQUIRED_FIELDS, request_data):
+        #    services.logger.debug(f"CANNOT process req, reason - required field missing.")
+        #    return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
+        #else:    
+        journey_id = request.data.get("journey_id")        
+        slat = float(request.data.get("slat"))
+        slong = float(request.data.get("slong"))
+        dlat = float(request.data.get("dlat"))
+        dlong = float(request.data.get("dlong"))
+        preferred_mode = request.data.get("preferred_mode")
+        radius = int(request.data.get("radius"))
+        time = request.data.get("time")
+        matched_journeys = []
+        if journey_id is None:
+            services.logger.debug(f'Creating new journey request with data: \
+            {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
+            drop_points = {}
+            destination = [dlat, dlong]
+            drop_points.setdefault(email_address, []).append(destination)
+            journey_request_details = {'journeyID': journey_id,
+                                       'email_address': email_address,
+                                       'src_lat': slat,
+                                       'src_long': slong,
+                                       'des_lat': dlat,
+                                       'des_long': dlong,
+                                       'preferred_mode': preferred_mode,
+                                       'radius': radius,
+                                       'time': time,
+                                       'drop_points': drop_points}
 
-                #journey_data = json.dumps(journey_request_details)
-                journey_id = create_new_journey(journey_request_details)
-            else:
-                 services.logger.debug(f'journey already exists for the user, \
-                     not creating a new one, only searching for matches')
+            #journey_data = json.dumps(journey_request_details)
+            journey_id = create_new_journey(journey_request_details)
+        else:
+            services.logger.debug(f'journey already exists for the user, \
+                 not creating a new one, only searching for matches')
                  
        
         
