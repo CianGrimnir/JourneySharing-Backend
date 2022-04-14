@@ -23,17 +23,14 @@ import services.utils as utils
 
 def match_locations(request_list, requested_journey):
     matched_journeys = []
-    print(request_list)
-    
+  
     bt = pd.DataFrame(request_list)
-    print(bt)
     if bt.empty:
        services.logger.error('No data in balltree')
        return 0
 
     a = bt['src_lat'].to_numpy()
     b = bt['src_long'].to_numpy()
-    print("a shape:", a.shape, " b shape: ", b.shape)
     x = np.vstack([a,b])
     x = x.T
     tree_list = BallTree(np.deg2rad(x), metric='haversine')
@@ -88,102 +85,81 @@ def new_journey_user_request(request):
         redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         request_token = request.data.get("token")
         email_address = request.data.get("email_address")
-        print(request.data)
         auth, reason = utils.check_request_auth(request)
-        print(auth, reason)
         if not auth:
             response_body = {'status code': HTTP_400_BAD_REQUEST,
                              'body': f'user - {email_address} {reason} request token.',
                              }
             services.logger.info(f"username - {email_address} {reason} request token.")
-            #return Response(response_body, status=HTTP_400_BAD_REQUEST)
+            return Response(response_body, status=HTTP_400_BAD_REQUEST)
 
-        #REQUIRED_FIELDS = ['email_address', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
-        #if isinstance(request.data, django.http.request.QueryDict):
-        #    request_data = request.data.dict()
-        #else:
-        #    request_data = request.data
-        #services.logger.info(f"request body - {request_data}")
-        #if not compare_dict(REQUIRED_FIELDS, request_data):
-        #    services.logger.debug(f"CANNOT process req, reason - required field missing.")
-        #    return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
-        #else:    
-        journey_id = request.data.get("journey_id")        
-        slat = float(request.data.get("slat"))
-        slong = float(request.data.get("slong"))
-        dlat = float(request.data.get("dlat"))
-        dlong = float(request.data.get("dlong"))
-        preferred_mode = request.data.get("preferred_mode")
-        radius = int(request.data.get("radius"))
-        time = request.data.get("time")
-        matched_journeys = []
-        if journey_id is None:
-            services.logger.debug(f'Creating new journey request with data: \
-            {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
-            drop_points = {}
-            destination = [dlat, dlong]
-            drop_points.setdefault(email_address, []).append(destination)
-            journey_request_details = {'journeyID': journey_id,
-                                       'email_address': email_address,
-                                       'src_lat': slat,
-                                       'src_long': slong,
-                                       'des_lat': dlat,
-                                       'des_long': dlong,
-                                       'preferred_mode': preferred_mode,
-                                       'radius': radius,
-                                       'time': time,
-                                       'drop_points': drop_points}
-
-            #journey_data = json.dumps(journey_request_details)
-            journey_id = create_new_journey(journey_request_details)
+        REQUIRED_FIELDS = ['email_address', 'slat', 'slong', 'dlat', 'dlong', 'preferred_mode', 'radius', 'time']
+        if isinstance(request.data, django.http.request.QueryDict):
+            request_data = request.data.dict()
         else:
-            services.logger.debug(f'journey already exists for the user, \
-                 not creating a new one, only searching for matches')
+            request_data = request.data
+        services.logger.info(f"request body - {request_data}")
+        if not compare_dict(REQUIRED_FIELDS, request_data):
+            services.logger.debug(f"CANNOT process req, reason - required field missing.")
+            return Response({'message': 'required field missing'}, status=HTTP_400_BAD_REQUEST)
+        else:    
+            journey_id = request.data.get("journey_id")        
+            slat = float(request.data.get("slat"))
+            slong = float(request.data.get("slong"))
+            dlat = float(request.data.get("dlat"))
+            dlong = float(request.data.get("dlong"))
+            preferred_mode = request.data.get("preferred_mode")
+            radius = int(request.data.get("radius"))
+            time = request.data.get("time")
+            matched_journeys = []
+            if journey_id is None:
+                services.logger.debug(f'Creating new journey request with data: \
+                {journey_id, slat, slong, dlat, dlong, preferred_mode, radius, time}')
+                drop_points = {}
+                destination = [dlat, dlong]
+                drop_points.setdefault(email_address, []).append(destination)
+                journey_request_details = {'journeyID': journey_id,
+                                           'email_address': email_address,
+                                           'src_lat': slat,
+                                           'src_long': slong,
+                                           'des_lat': dlat,
+                                           'des_long': dlong,
+                                           'preferred_mode': preferred_mode,
+                                           'radius': radius,
+                                           'time': time,
+                                           'drop_points': drop_points}
+
+                journey_id = create_new_journey(journey_request_details)
+            else:
+                services.logger.debug(f'journey already exists for the user, \
+                     not creating a new one, only searching for matches')
                  
-       
-        
             matched_journeys = match_journey_requests(journey_id)
         
             if matched_journeys:
                 dynamodbService = DynamoDbService('dynamodb', const.default_region,\
                      const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
                 for journey in matched_journeys:
-                    print(journey)
                     search_key = {'email': journey['email_address']}
                     # fetch profile information from the dynamodb using email_address as primary key.
                     get_items = dynamodbService.get_item_from_table('user_profiles', search_key)
                     services.logger.info(f"output from dynamodb - {get_items}")
-                    print(get_items.item['first_name'])
                     journey["first_name"] = get_items.item['first_name']
                     journey["country"] = get_items.item['country']
                     journey["age"] = get_items.item['age']
                     journey["gender"] = get_items.item['gender']
-                    break
-
-        print("FINAL:: ", matched_journeys)        
 
         
         if matched_journeys:
             response_body = {'status code': HTTP_200_OK,
                              'journey_id': journey_id,   
-                             'email_address': matched_journeys["email_address"],
-                             'src_lat': matched_journeys["src_lat"],
-                             'src_long': matched_journeys["src_lat"],
-                             'des_lat': matched_journeys["des_lat"],
-                             'des_long': matched_journeys["des_long"] }
+                             'body': matched_journeys  }
         else:
             response_body = {'status code': HTTP_200_OK,
                              'journey_id': journey_id,   
                              'body': []  }                     
 
         return Response(response_body, status=HTTP_200_OK)
-    
-def start_journey(journey_id):
-    pass
-
-
-def notify_user(message):
-    pass
 
 @csrf_exempt
 @api_view(["POST"])
@@ -192,7 +168,6 @@ def join_existing_journey(request):
     if request.method == 'POST':
         journey_id_self = request.data.get("journey_id_self")
         journey_id_to_join = request.data.get("journey_id_to_join")
-        print("journey_id_self: ", type(journey_id_self), " journey_id_to_join: ", type(journey_id_to_join))
         redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
         curr_journey = json.loads(redis_client.get_values(journey_id_self))
         join_journey = json.loads(redis_client.get_values(journey_id_to_join))
@@ -209,19 +184,6 @@ def join_existing_journey(request):
                          'start_long': join_journey["src_long"] }                     
 
         return Response(response_body, status=HTTP_200_OK)
-
-
-def calc_start_pt():
-    pass
-
-
-def rate_journey():
-    pass
-
-
-def end_journey():
-    pass
-
 
 def compare_dict(required_field, request_data):
     for field in required_field:
