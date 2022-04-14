@@ -136,14 +136,16 @@ def new_journey_user_request(request):
                 #journey_data = json.dumps(journey_request_details)
                 journey_id = create_new_journey(journey_request_details)
             else:
-                 services.logger.debug(f'journey already exists for the user, not creating a new one, only searching for matches')
-                   
-            
-            
+                 services.logger.debug(f'journey already exists for the user, \
+                     not creating a new one, only searching for matches')
+                 
+       
+        
             matched_journeys = match_journey_requests(journey_id)
         
             if matched_journeys:
-                dynamodbService = DynamoDbService('dynamodb', const.default_region, const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
+                dynamodbService = DynamoDbService('dynamodb', const.default_region,\
+                     const.AWS_ACCESS_KEY_ID, const.AWS_SECRET_ACCESS_KEY)
                 for journey in matched_journeys:
                     print(journey)
                     search_key = {'email': journey['email_address']}
@@ -176,13 +178,23 @@ def notify_user(message):
 
 @csrf_exempt
 @api_view(["POST"])
-def join_existing_journey(journey_id_self, journey_id_to_join):
-    redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
-    curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self))
-    join_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_to_join))
-    drop_points = [join_journey["drop_points"], curr_journey["drop_points"]]
-    join_journey["drop_points"] = drop_points
-    redis_client.delete_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self)
+def join_existing_journey(request):
+    #journey_id_self, journey_id_to_join
+    if request.method == 'POST':
+        journey_id_self = request.data.get("journey_id_self")
+        journey_id_to_join = request.data.get("journey_id_to_join")
+        redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
+        curr_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self))
+        join_journey = json.loads(redis_client.get_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_to_join))
+        drop_points = [join_journey["drop_points"], curr_journey["drop_points"]]
+        join_journey["drop_points"] = drop_points
+        redis_client.delete_journey_from_journey_id(const.REDIS_JOURNEY_KEY, journey_id_self)
+
+        response_body = {'status code': HTTP_200_OK,
+                         'journey_id': journey_id_to_join,   
+                         'drop points': drop_points  }                     
+
+        return Response(response_body, status=HTTP_200_OK)
 
 
 def calc_start_pt():
