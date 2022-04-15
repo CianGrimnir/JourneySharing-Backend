@@ -161,7 +161,7 @@ def new_journey_user_request(request):
 
         return Response(response_body, status=HTTP_200_OK)
 
-@csrf_exempt
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def join_existing_journey(request):
     #journey_id_self, journey_id_to_join
