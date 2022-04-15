@@ -1,5 +1,5 @@
 import django.http.request
-from django.views.decorators.csrf import csrf_exempt
+from ratelimit.decorators import ratelimit
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from services.dynamodb import DynamoDbService
@@ -15,7 +15,7 @@ import services.utils as utils
 services.logger.setLevel(logging.DEBUG)
 
 
-@csrf_exempt
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def user_register(request):
     """

@@ -1,5 +1,5 @@
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from ratelimit.decorators import ratelimit
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from services.dynamodb import DynamoDbService
@@ -16,7 +16,7 @@ services.logger.setLevel(logging.DEBUG)
 
 
 # Create your views here.
-@csrf_exempt
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def user_login(request):
     """
@@ -63,7 +63,7 @@ def user_login(request):
             return Response(response_body, status=HTTP_401_UNAUTHORIZED)
 
 
-@csrf_exempt
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def user_logout(request):
     """

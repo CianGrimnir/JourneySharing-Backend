@@ -1,5 +1,5 @@
 import django.http.request
-from django.views.decorators.csrf import csrf_exempt
+from ratelimit.decorators import ratelimit
 from services.redis import Redis
 import services
 import logging
@@ -46,7 +46,7 @@ def match_locations(request_list, requested_journey):
 
 
 def match_journey_requests(journey_id):
-    # search all req jouney
+    # search all req journey
     redis_client = Redis(hostname=settings.REDIS_HOST, port=settings.REDIS_PORT)
     all_journeys = redis_client.get_all_journeys(const.REDIS_JOURNEY_KEY)
     src_matched_locs = []
@@ -63,7 +63,10 @@ def match_journey_requests(journey_id):
         current_journeys.append(curr_journey)
     src_matched_locs = match_locations(current_journeys, requested_journey)
     des_matched_locs = match_locations(src_matched_locs, requested_journey)
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
     return des_matched_locs
 
 def create_new_journey(journey_data):
@@ -78,7 +81,7 @@ def create_new_journey(journey_data):
 
 # Create your views here.
 # user_id,slat, slong, dlat, dlong, preferred_mode, radius, time
-@csrf_exempt
+@ratelimit(key='ip', rate='100/s', block=True)
 @api_view(["POST"])
 def new_journey_user_request(request):
     if request.method == 'POST':
