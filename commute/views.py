@@ -63,11 +63,8 @@ def match_journey_requests(journey_id):
         current_journeys.append(curr_journey)
     src_matched_locs = match_locations(current_journeys, requested_journey)
     des_matched_locs = match_locations(src_matched_locs, requested_journey)
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
     return des_matched_locs
+
 
 def create_new_journey(journey_data):
     journey_id = utils.generate_uniqid()
